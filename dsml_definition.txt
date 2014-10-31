@@ -25,17 +25,19 @@ define state state-name argument-1 argument-2 ...
         match-func(arguments ...)
         conjunction match-func(arugments ...)
         [...]
+	compare
+	    value-1 comparator value-2
     do
         side-effect-func(arguments ...)
         [...]
     goto
-        destination
+        destination argument-1 argument-2 ...
     [...]
 	timeout
 	    seconds
     [do/goto ...]
     
-keywords: "define", "state", "matching", "do", "goto", "timeout"
+keywords: "define", "state", "matching", "do", "goto", "timeout", "compare"
 state-name: user-defined string
 argument-x: user-defined string
 match-func: 
@@ -46,6 +48,16 @@ match-func:
 conjunction:
   - and
   - or
+comparator:
+  - <
+  - <=
+  - ==
+  - >=
+  - >
+value-x:
+  - string literal # == only
+  - integer
+  - variable-name
 seconds: integer > 0
 side-effect-func:
   - print(text)
@@ -66,5 +78,5 @@ side-effect-func:
   - remove_of_rule(arguments)
 destination:
   - state-name
-  - exit
+  - exit # No arguments allowed.
   
