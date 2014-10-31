@@ -31,8 +31,11 @@ define state state-name argument-1 argument-2 ...
     goto
         destination
     [...]
-        
-keywords: "define", "state", "matching", "do", "goto"
+	timeout
+	    seconds
+    [do/goto ...]
+    
+keywords: "define", "state", "matching", "do", "goto", "timeout"
 state-name: user-defined string
 argument-x: user-defined string
 match-func: 
@@ -43,6 +46,7 @@ match-func:
 conjunction:
   - and
   - or
+seconds: integer > 0
 side-effect-func:
   - print(text)
   - print_dump()
