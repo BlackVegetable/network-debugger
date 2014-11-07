@@ -27,7 +27,23 @@
 
 \section{\LARGE Introduction}
 
-( and here the introduction- test)
+
+Debugging a distributed system can be a very difficult and challenging task.  A distributed
+system consists of multiple processes, running across multiple computers, that
+cooperate across a network to perform some task. This debugging challenge is due to scalability of these systems which is one of their standard characteristics. An example is a web site
+implemented as a distributed system including a load balancer, a set of HTTP
+servers, and a set of database servers.  If the system as a whole misbehaves,
+it can be tricky to figure out which of the many pieces of the system is at
+fault.  Even monitoring the communication between the parts of the system can
+be a challenge.
+
+To help the users simplifying the debugging process of these systems, many proposals and tools have been presented( see section 7 relate work). However, each of them has disadvantages and drawbacks. ( we will mention the previous work and their drawbacks with citations ).
+
+We present our approach "DSML"; an SDN-Based Debugging Tool for Distributed Systems, which is a new way to observe and control the communication events between the parts of a distributed system using Software-defined networking (SDN) and state mating language. We were motivated by the need of a simple and practical debugging tool, and created our approach that meets the following characteristics: 1) It suppresses only relevant traffic to the debugger, which saves the need for monitoring the entirety of network traffic that can be expensive, huge effort  required and less performance efficient 2) users can get feedbacks they need to make informed debugging corrections. ( we can add more good characteristics) 
+
+Using these characteristics as our goals, we built and designed our approach " DSML", a debugging tool for distributed systems using SDN and state machine techniques. With DSML, we were able to ( this will involve our  implementation and evaluation summary with the results).
+
+
 
 \section{\LARGE Solution}
 
