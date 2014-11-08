@@ -88,7 +88,16 @@ The DSML protocol script written by the user is read into a compiler to produce 
 
 \section{\LARGE Related Work}
 
-Test
+The topic of debugging the distributed system has long been studied\cite{miller1988breakpoints}, but as the scale and functionalities keep growing, the components of today's distributed system are not only distributed deployed but also admixed and twisted as building blocks and may written by different languages\cite{chow2014mystery}. And currently there are good examples to debug specific distributed applications, such as MPI applications\cite{dryden2014pgdb}. But a general purpose debugging tool is still needed.
+
+Using 'Big Data' techniques\cite{chow2014mystery} to understand and modelling the behavior of distributed system(single request triggers parallel execution of multiple software components) is a good idea since with the scale grown up, there are sufficient observations for the learning procedure.
+
+There are multiple way to observe and monitor the distributed systems or the application running on them. lprof\cite{zhao2014lprof} is statically listen to the binary code to infer how logs can be parsed and then the intertwined log entries can be associated to specific individual request. There are also low-cost hardware solution to it. Minerva\cite{sommer2013minerva} affects no execution timing and is non-intrusive. By using on-chip debug port, Minerva got full control of the system(wireless senor network) that can stopping on one breaking point synchronously.
+
+Other approaches including adding units either on the system or on the applications. Design a Pervasive Debugger\cite{ho2005design} for distributed applications then execute the target in a virtual environment the debugger can get control and exam the application. Declarative Tracepoints\cite{cao2008declarative} is providing a debugging system allow uses to insert action-associated checkpoints, that the applications to be debugged at runtime and require no change to source code.
+
+Some instructive research allowed users to describe their expectations or release them from repetitious operations. Data Centric\cite{abramson2010data} allow uses to declare their expectations about the programm state as a whole than a single process state, enable scalable solution to very large problems. Dataflow Language\cite{marceau2004dataflow} is programmable or scriptable for users to define the debugging work.
+
 
 \section{\LARGE Conclusion}
 
