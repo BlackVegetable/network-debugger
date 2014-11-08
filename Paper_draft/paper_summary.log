@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2014.8.26)  7 NOV 2014 20:17
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2014.8.26)  7 NOV 2014 20:52
 entering extended mode
 **C:/Users/icfy/Documents/学习资料/作业/Networks/dsml_git/network-debugge
 r/Paper_draft/paper_summary.tex
@@ -131,18 +131,18 @@ Underfull \hbox (badness 2735) in paragraph at lines 10--15
 Here is how much of TeX's memory you used:
  1345 strings out of 495354
  17841 string characters out of 3183859
- 73889 words of memory out of 3000000
+ 73886 words of memory out of 3000000
  4538 multiletter control sequences out of 15000+200000
  6999 words of font info for 25 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
- 34i,4n,21p,828b,254s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 34i,4n,21p,829b,254s stack positions out of 5000i,500n,10000p,200000b,50000s
 <f:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm
 /cmbx12.pfb><f:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm/cmcsc10.pfb><f:/CTEX
 /MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><f:/CTEX/MiKTeX/fonts/type1/pu
 blic/amsfonts/cm/cmr12.pfb><f:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.
 pfb><f:/CTEX/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><f:/CTEX/MiKTeX/f
 onts/type1/public/amsfonts/cm/cmti9.pfb>
-Output written on paper_summary.pdf (3 pages, 129854 bytes).
+Output written on paper_summary.pdf (3 pages, 129575 bytes).
 PDF statistics:
  40 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
