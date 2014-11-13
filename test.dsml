@@ -1,0 +1,37 @@
+
+# Hello, this is a comment.
+
+##
+   #
+
+start variables
+    devin "Awesome"
+    jerry = "cool"
+    Sadie "@#%!@"
+
+    # Numbers now
+    x = 1
+    dx 5
+    blagga -14
+
+start state initialState
+
+# No arguments yet
+define state initialState
+    matching
+        match_string("UDP", "dport", "53")
+    # No conjunctions yet
+    # No comparison(s) yet
+    #do
+    #    print("Got one!")
+    goto
+        stateWithOneArgument 42
+    # No timeout yet
+
+define state stateWithOneArgument stringArgument
+    matching
+        match_atleast("IP", "len", 12)
+    #do
+    #    print("IP was at least 12")
+    goto
+        exit
