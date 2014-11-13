@@ -1,0 +1,107 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{epsfig,xspace,url}
+\usepackage{authblk}
+
+
+\title{\huge \bf DSML: an SDN-Based Debugging Tool for Distributed Systems  \\}
+\author{ \Large Devin Ekins,   Eric Eide,    Hadeel Maryoosh,  Jacobus Van der Merwe,  Yue Fei }
+\affil{\large School of Computing,
+ University of Utah}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{\LARGE Abstract}
+
+( here we write the abstract) \cite{paper}
+
+\section*{Categories and Subject Descriptors}
+
+( If applicable)
+
+\section*{Keyword}
+
+( any keyword in the paper)
+
+\section{\LARGE Introduction}
+
+
+Debugging a distributed system can be a very difficult and challenging task.  A distributed
+system consists of multiple processes, running across multiple computers, that
+cooperate across a network to perform some task. This debugging challenge is due to scalability of these systems which is one of their standard characteristics. An example is a web site
+implemented as a distributed system including a load balancer, a set of HTTP
+servers, and a set of database servers.  If the system as a whole misbehaves,
+it can be tricky to figure out which of the many pieces of the system is at
+fault.  Even monitoring the communication between the parts of the system can
+be a challenge.
+
+To help the users simplifying the debugging process of these systems, many proposals and tools have been presented( see section 7 relate work). However, each of them has disadvantages and drawbacks. ( we will mention the previous work and their drawbacks with citations ).
+
+We present our approach "DSML"; an SDN-Based Debugging Tool for Distributed Systems, which is a new way to observe and control the communication events between the parts of a distributed system using Software-defined networking (SDN) and state mating language. We were motivated by the need of a simple and practical debugging tool, and created our approach that meets the following characteristics: 1) It suppresses only relevant traffic to the debugger, which saves the need for monitoring the entirety of network traffic that can be expensive, huge effort  required and less performance efficient 2) users can get feedbacks they need to make informed debugging corrections. ( we can add more good characteristics) 
+
+Using these characteristics as our goals, we built and designed our approach " DSML", a debugging tool for distributed systems using SDN and state machine techniques. With DSML, we were able to ( this will involve our  implementation and evaluation summary with the results).
+
+
+
+\section{\LARGE Solution}
+
+Our system allows users to define network protocols in terms of states of a Definite Finite Automaton (DFA) using our Debugger State Machine Language (DSML). Because explaining network protocols often involves a graphical representation as a DFA, we felt this would be a good way to model network status from the perspective of a debugger as well.
+
+DSML supports the definition of states as well as the transitions between them. Transitions are defined by one or more matching operations which performs deep packet inspection to match a fields contents (or a substring of its contents) against a value. Alternatively, a state transition may be defined by a timeout wherein no matching packets were encountered.
+
+As deep packet expansion is expensive, we provide a mechanism to avoid inspecting the entirety of network traffic. To avoid performing these expensive operations on every packet sent through the network, DSML also allows for OpenFlow filters to only funnel relevant traffic to the debugger itself. This funneling is performed at line rate. For example, a user may know that this debugger only need to consider packets with destination port of 80 for HTTP traffic. Then the debugger only performs inspection on this subset of packets.
+
+Importantly, DSML allows for the use of side-effect operations which include logging to a file or printing to a console relevant information as well as displaying its equivalent of a ?stack trace?. This stack trace is a history of network states that were traversed to arrive at the current position as well as the packets that were matched on for each transition. This allows users to get the feedback they need to make informed debugging corrections.
+
+The DSML protocol script written by the user is read into a compiler to produce the Debugger State Machine (DSM) which then may be run on a controller with an OpenFlow-enabled switch to begin debugging network traffic. Switches need not support OpenFlow to send traffic to the DSM, but the optimization gained by the OpenFlow filters will not be present if OpenFlow is not supported on the switch.
+
+\section{\LARGE Implementation}
+
+\begin{itemize}
+  \item DSML parsing in Python
+  \item DSML parsing to Python
+  \item Mapping between native Python and DSML
+  \item Global Dictionary (maybe?)
+  \item POX/RYU Controller
+  \item Connection between switch and controller
+\end{itemize}
+
+\section{\LARGE Evalution}
+
+\begin{itemize}
+  \item Compiler performance
+  \item DSML Ease of Use
+  \item Run-time performance
+  \item DSM Usefulness
+\end{itemize}
+
+\section{\LARGE Future Work}
+
+\begin{itemize}
+  \item Syntactic Sugar
+  \item Extend Openflow (maybe?)
+  \item Composition of Protocols
+  \item Parallel DSMs (if not done)
+\end{itemize}
+
+\section{\LARGE Related Work}
+
+Test
+
+\section{\LARGE Conclusion}
+
+\begin{itemize}
+  \item Clearly, the internet is made for pizza.
+  \item Merits of various pizza formats
+  \item IEEE standard for secure pizza distribution protocol
+\end{itemize}
+
+{
+  \footnotesize 
+  \small 
+  \bibliographystyle{acm}
+  \bibliography{biblio}
+}
+\end{document}
