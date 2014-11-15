@@ -1,0 +1,71 @@
+\begin{thebibliography}{10}
+
+\bibitem{abramson2010data}
+{\sc Abramson, D., Dinh, M.~N., Kurniawan, D., Moench, B., and DeRose, L.}
+\newblock Data centric highly parallel debugging.
+\newblock In {\em Proceedings of the 19th ACM International Symposium on High
+  Performance Distributed Computing\/} (2010), ACM, pp.~119--129.
+
+\bibitem{cao2008declarative}
+{\sc Cao, Q., Abdelzaher, T., Stankovic, J., Whitehouse, K., and Luo, L.}
+\newblock Declarative tracepoints: a programmable and application independent
+  debugging system for wireless sensor networks.
+\newblock In {\em Proceedings of the 6th ACM conference on Embedded network
+  sensor systems\/} (2008), ACM, pp.~85--98.
+
+\bibitem{chow2014mystery}
+{\sc Chow, M., Meisner, D., Flinn, J., Peek, D., and Wenisch, T.~F.}
+\newblock The mystery machine: End-to-end performance analysis of large-scale
+  internet services.
+\newblock In {\em Proceedings of the 11th symposium on Operating Systems Design
+  and Implementation\/} (2014).
+
+\bibitem{dryden2014pgdb}
+{\sc Dryden, N.}
+\newblock Pgdb: A debugger for mpi applications.
+\newblock In {\em Proceedings of the 2014 Annual Conference on Extreme Science
+  and Engineering Discovery Environment\/} (2014), ACM, p.~44.
+
+\bibitem{paper}
+{\sc Han, D., Anand, A., Dogar, F., Li, B., Lim, H., Machado, M., Mukundan, A.,
+  Wu, W., Akella, A., Andersen, D.~G., Byers, J.~W., Seshan, S., and
+  Steenkiste, P.}
+\newblock Xia: Efficient support for evolvable internetworking.
+\newblock In {\em Proceedings of the 9th USENIX Conference on Networked Systems
+  Design and Implementation\/} (Berkeley, CA, USA, 2012), NSDI'12, USENIX
+  Association, pp.~23--23.
+
+\bibitem{ho2005design}
+{\sc Ho, A., and Hand, S.}
+\newblock On the design of a pervasive debugger.
+\newblock In {\em Proceedings of the sixth international symposium on Automated
+  analysis-driven debugging\/} (2005), ACM, pp.~117--122.
+
+\bibitem{marceau2004dataflow}
+{\sc Marceau, G., Cooper, G.~H., Krishnamurthi, S., and Reiss, S.~P.}
+\newblock A dataflow language for scriptable debugging.
+\newblock In {\em Proceedings of the 19th IEEE international conference on
+  Automated software engineering\/} (2004), IEEE Computer Society,
+  pp.~218--227.
+
+\bibitem{miller1988breakpoints}
+{\sc Miller, B.~P., and Choi, J.-D.}
+\newblock Breakpoints and halting in distributed programs.
+\newblock In {\em Distributed Computing Systems, 1988., 8th International
+  Conference on\/} (1988), IEEE, pp.~316--323.
+
+\bibitem{sommer2013minerva}
+{\sc Sommer, P., and Kusy, B.}
+\newblock Minerva: distributed tracing and debugging in wireless sensor
+  networks.
+\newblock In {\em Proceedings of the 11th ACM Conference on Embedded Networked
+  Sensor Systems\/} (2013), ACM, p.~12.
+
+\bibitem{zhao2014lprof}
+{\sc Zhao, X., Zhang, Y., Lion, D., Faizan, M., Luo, Y., Yuan, D., and Stumm,
+  M.}
+\newblock lprof: A nonintrusive request flow profiler for distributed systems.
+\newblock In {\em Proceedings of the 11th Symposium on Operating Systems Design
+  and Implementation\/} (2014).
+
+\end{thebibliography}
