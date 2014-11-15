@@ -1,0 +1,25 @@
+Turn out the installation was wrong. Previously I used "$sudo apt-get scapy"(oddly, it worked..), and this time I downloaded the .tar.gz package to install. Here I post a step-by-step install instruction(just in case if I foget it next time:)
+
+1. I downloaded the tar.gz from http://www.secdev.org/projects/scapy/
+2. upload it to nodeE: $scp ./scapy-latest.tar.gz u0941260@nodeE.test-sniff-ns3.cs6480-dbg.emulab.net
+3. ssh to nodeE, and unpack the tar: nodee:~> tar -zxvf scapy-latest.tar.gz
+4. install scapy:
+      nodee:~> cd cd scapy-2.1.0
+      nodee:~/scapy-2.1.0> sudo python ./setup.py install
+5. install other optional packages:(I don't know what they are used for..)
+      nodee:~> sudo apt-get install tcpdump graphviz imagemagick python-gnuplot python-crypto python-pyx
+6. run scapy: (use "$ whereis scapy" to find scapy)
+      nodee:/usr/local/bin> ./scapy
+7. then we can sniff packet as we wish: on interfaces, on host IPs, count the packet as:
+      >>> sniff(filter="icmp and host 10.1.3.3", count=100)
+      >>> sniff(iface="eth5", prn=lambda x: x.show())
+      >>> a=_
+      >>> a.nsummary()
+   print the packet:
+      >>> a[0]
+      >>> print a[1]
+
+The attached .log is message printed, there are many useful infomation, the statistics, the packet etc.
+
+
+ssh u0941260@nodeD.test-sniff-ns3.cs6480-dbg.emulab.net
