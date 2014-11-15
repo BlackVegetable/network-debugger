@@ -5,7 +5,7 @@
    #
 
 start variables
-    devin "Awesome"
+    devin "Questionable"
     jerry = "cool"
     Sadie "@#%!@"
 
@@ -25,13 +25,22 @@ define state initialState
     #do
     #    print("Got one!")
     goto
-        stateWithOneArgument 42
-    # No timeout yet
+        stateWithOnlyTimeout
 
-define state stateWithOneArgument stringArgument
+define state stateWithOnlyTimeout
+    timeout
+        60
+    goto
+        stateWithOneArgument 42
+
+define state stateWithOneArgument arg1
     matching
         match_atleast("IP", "len", 12)
     #do
     #    print("IP was at least 12")
     goto
         exit
+    timeout
+        120
+    goto
+        stateWithOnlyTimeout

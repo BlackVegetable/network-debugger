@@ -26,13 +26,22 @@ class StateDefinition:
         s = "\ndef " + self.name + "(self, pkt"
         for arg in self.argument_list:
             s += ", " + arg
-        s += "):"
-        for clause in self.clauses:
-            s += "\n" + str(clause)
+        s += ", __time_elapsed=0):"
         if self.timeout:
             s += "\n" + str(self.timeout)
+        else:
+            s += "\n    if __time_elapsed:"
+            s += "\n        return (False, [" + self.name
+            for arg in self.argument_list:
+                s += ", " + arg
+            s += "], [])"
+        for clause in self.clauses:
+            s += "\n" + str(clause)
         # TODO: default argument list should be the parameters given.
-        s += "    return (False, [" + self.name + "])"
+        s += "    return (False, [" + self.name
+        for arg in self.argument_list:
+            s += ", " + arg
+        s += "], [])"
         return s
 
     def is_valid(self):
@@ -61,12 +70,13 @@ class Clause:
         s += ":"
         # TODO: print comparisons
         # TODO: print side_effects
+        # TODO: Add OF Rule return values.
         goto_args = shlex.split(self.goto)
         s += "\n        return (True, [" + goto_args[0]
         if len(goto_args) > 1:
             for x in goto_args[1:]:
                 s += ", " + x
-        s += "])\n"
+        s += "], [])\n"
         return s
 
     def is_valid(self):
@@ -81,6 +91,26 @@ class Timeout:
         self.seconds = None
         self.side_effects = []
         self.goto = None
+
+    def __str__(self):
+        if not self.seconds:
+            raise Exception("Timeout has no string representation with no seconds.")
+        if self.seconds < 1:
+            raise Exception("Timeout cannot have non-positive duration.")
+        if not self.goto:
+            raise Exception("Timeout has no string representation with no goto.")
+        s = "    if __time_elapsed >= " + `self.seconds` + ":"
+        # TODO: Add OF Rules return values.
+        for effect in self.side_effects:    
+            s += "\n        " + effect
+        goto_args = shlex.split(self.goto)
+        s += "\n        return (True, ["
+        s += goto_args[0]
+        if len(goto_args) > 1:
+            for arg in goto_args[1:]:
+                s += ", " + arg
+        s += "], [])\n"
+        return s
 
 def main(input_path):
     if input_path[-4:] != "dsml":
@@ -159,11 +189,12 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
             definition = StateDefinition(state_name, args)
             
             # Parse and add Clauses
-            lines_to_skip, clauses = parse_clauses(in_contents, line_number + 1, out_file)
+            lines_to_skip, clauses, timeout = parse_clauses(in_contents, line_number + 1, out_file)
             for c in clauses:
                 definition.clauses.append(c)
+            if timeout:
+                definition.timeout = timeout
 
-            # Add Timeout if present? TODO
             out_file.write(str(definition) + "\n")
 
     
@@ -279,10 +310,38 @@ def parse_matching(in_contents, start_line_number, current_clause):
         else:
             raise Exception("Invalid matching line: " + `line_number`)
 
-def parse_goto(in_contents, start_line_number, current_clause):
+def parse_timeout(in_contents, start_line_number, timeout):
+    if start_line_number is len(in_contents):
+        raise Exception('timeout used not followed by a duration on line: ' + `start_line_number - 1`)
+    lines_to_skip = 0
+    lines_processed = 0
+    for line_number in range(start_line_number, len(in_contents)):
+        line = in_contents[line_number].strip()
+        if line.startswith("#") or line == "":
+            # Comment or whitespace only.
+            continue
+        if lines_to_skip > 0:
+            lines_to_skip -= 1
+            continue
+        if not timeout.seconds:
+            if not is_valid_number(line) or int(line, 10) <= 0:
+                raise Exception('timeout duration must be a positive integer (given: ' + `line` +
+                                ') on line ' + `line_number`)
+            timeout.seconds = int(line, 10)
+            lines_processed += 1
+        elif line == "goto":
+            lines_to_skip = parse_goto(in_contents, line_number + 1, timeout)
+            lines_processed += lines_to_skip + 1
+            break
+        elif line == "do":
+            raise NotImplementedError("'do' has not been implemented yet!")
+    if not timeout.goto:
+        raise Exception('timeout must end with a goto.')
+    return lines_processed
+
+def parse_goto(in_contents, start_line_number, goto_container):
     if start_line_number is len(in_contents):
         raise Exception('goto used not followed by a destination on line: ' + `start_line_number - 1`)
-    pass
     goto_str = ""
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
@@ -306,7 +365,7 @@ def parse_goto(in_contents, start_line_number, current_clause):
         if goto_str == "":
             raise Exception("goto used not followed by a destination on line: " +
                             `start_line_number - 1`)
-        current_clause.goto = goto_str
+        goto_container.goto = goto_str
         break
     return 1 # One non-whitespace line is always processed here.
     # TODO Special case for goto: exit
@@ -318,6 +377,7 @@ def parse_clauses(in_contents, start_line_number, out_file):
     lines_to_skip = 0
     clauses = []
     current_clause = None
+    timeout = None
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]    
         if line.startswith("#") or line == "":
@@ -341,12 +401,14 @@ def parse_clauses(in_contents, start_line_number, out_file):
         elif line == "do":
             raise NotImplementedError("'do' has not been implemented yet!")
         elif line == "timeout":
-            raise NotImplementedError("'timeout' has not been implemented yet!")
-            # Timeout handling here TODO
-            # Only allow one timeout TODO
+            if timeout:
+                raise Exception("Multiple timeouts not allowed. Line: " + `line_number`)
+            timeout = Timeout()
+            lines_to_skip = parse_timeout(in_contents, line_number + 1, timeout)
+            lines_processed += lines_to_skip + 1
         else:
             raise Exception('Invalid clause line: ' + `line_number`)
-    return (lines_processed, clauses)
+    return (lines_processed, clauses, timeout)
 
 def parse_of_filters(in_contents, start_line_number, out_file):
     if start_line_number is len(in_contents):
