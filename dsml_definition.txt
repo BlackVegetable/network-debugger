@@ -25,16 +25,16 @@ define state state-name argument-1 argument-2 ...
         match-func(arguments ...)
         conjunction match-func(arugments ...)
         [...]
-	compare
-	    value-1 comparator value-2
+    compare
+      value-1 comparator value-2
     do
         side-effect-func(arguments ...)
         [...]
     goto
         destination argument-1 argument-2 ...
     [...]
-	timeout
-	    seconds
+    timeout
+      seconds
     [do/goto ...]
     
 keywords: "define", "state", "matching", "do", "goto", "timeout", "compare"
