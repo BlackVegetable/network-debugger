@@ -20,10 +20,10 @@ start state initialState
 define state initialState
     matching
         match_string("UDP", "dport", "53")
-    # No conjunctions yet
+        or match_string("UDP", "sport", "12")
     # No comparison(s) yet
-    #do
-    #    print("Got one!")
+    do
+        print("Got one!")
     goto
         stateWithOnlyTimeout
 
@@ -31,13 +31,18 @@ define state stateWithOnlyTimeout
     timeout
         60
     goto
-        stateWithOneArgument 42
+        stateWithOneArgument "42"
 
 define state stateWithOneArgument arg1
     matching
         match_atleast("IP", "len", 12)
-    #do
-    #    print("IP was at least 12")
+        match_atmost("IP", "len", 45)
+        and match_string("UDP", "dport", "53")
+        or match_string("UDP", "dport", arg1)
+        match_exactly("IP", "len", 33)
+    do
+        print("I am a print statement! GWAARRR!")
+        print_stacktrace()
     goto
         exit
     timeout

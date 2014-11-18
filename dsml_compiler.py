@@ -11,7 +11,7 @@ import shlex
 # Starting state expects: "start variables" or "start filters" or "start state"
 
 GLOBAL_DICT = "__global"
-DSML_KEYWORDS = [] #["exit"]
+DSML_KEYWORDS = ["__exit"]
 
 class StateDefinition:
     def __init__(self, name, argument_list=[]):
@@ -37,7 +37,6 @@ class StateDefinition:
             s += "], [])"
         for clause in self.clauses:
             s += "\n" + str(clause)
-        # TODO: default argument list should be the parameters given.
         s += "    return (False, [" + self.name
         for arg in self.argument_list:
             s += ", " + arg
@@ -66,10 +65,11 @@ class Clause:
         s = "    if " + self.matching_functions[0]
         if len(self.matching_functions) > 1:
             for x in self.matching_functions[1:]:
-                s += " \\\n       " + str(x)
+                s += "\\\n    " + str(x)
         s += ":"
-        # TODO: print comparisons
-        # TODO: print side_effects
+        # TODO: print comparisons (adjust side_effect indentation?)
+        for x in self.side_effects:
+            s += "\n        " + str(x)
         # TODO: Add OF Rule return values.
         goto_args = shlex.split(self.goto)
         s += "\n        return (True, [" + goto_args[0]
@@ -200,8 +200,10 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
     
 def write_header(out_file):
     # TODO: Check if os is linux?
-    out_file.write("#!/usr/bin/python")
-    # TODO: Machine generated remark
+    out_file.write("#!/usr/bin/python\n\n")
+    out_file.write("# This program is machine generated and should not\n")
+    out_file.write("# be altered by hand. To make changes, alter the\n")
+    out_file.write("# DSML file with the same name as this file.\n\n")
     
 def write_global_dict(out_file):
     out_file.write("\n" + GLOBAL_DICT + " = {}") 
@@ -231,9 +233,15 @@ def is_valid_boolean(word):
        return True
     return False
 
-def parse_matching_function(s, line_number):
+def parse_matching_function(s, line_number, conjunction):
+    # Remove conjunctions from the line for now.
+    if s.startswith("and"):
+        s = s[3:]
+    elif s.startswith("or"):
+        s = s[2:]
+
     fname_and_args = s.split("(")
-    
+
     fname = fname_and_args[0].strip()
     args = fname_and_args[1].strip() # Get rid of trailing whitespace.
     args = args[:-1] # Get rid of final parenthesis.
@@ -244,9 +252,9 @@ def parse_matching_function(s, line_number):
     if fname == "match_string":
         if len(args) == 4:
             # Protocol, field_name, val, full_match
-            if is_valid_string(args[0]) and \
-               is_valid_string(args[1]) and \
-               is_valid_string(args[2]) and \
+            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+               is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
                is_valid_boolean(args[3]):
                 arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
                               args[2] + ", " + args[3] + ")"
@@ -255,14 +263,14 @@ def parse_matching_function(s, line_number):
                                 " on line: " + `line_number`)
         elif len(args) == 3:
             # Protocol, field_name, val
-            if is_valid_string(args[0]) and \
-               is_valid_string(args[1]) and \
-               is_valid_string(args[2]):
+            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+               is_valid_string(args[2]) or is_valid_identifier(args[2]):
                 arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
                               args[2] + ")"
             else:
                 raise Exception("Invalid arguments for function " + fname +
-                                " on line: " + `line_number`)
+                                "(" + `args` + ") on line: " + `line_number`)
         else:
             raise Exception("Invalid argument count for function " + fname +
                             " on line: " + `line_number`)
@@ -271,9 +279,9 @@ def parse_matching_function(s, line_number):
         if len(args) == 3:
             # Protocol, field_name, val
             # Should we allow for string <--> number comparisons?
-            if is_valid_string(args[0]) and \
-               is_valid_string(args[1]) and \
-               is_valid_number(args[2]):
+            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+               is_valid_number(args[2]) or is_valid_identifier(args[2]):
                 arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
                               `args[2]` + ")"
             else:
@@ -286,6 +294,8 @@ def parse_matching_function(s, line_number):
         raise Exception("Invalid matching function name " + fname + " on line: " +
                         `line_number`)
 
+    if conjunction:
+        return conjunction + " " + fname + arg_string
     return fname + arg_string
 
 def parse_matching(in_contents, start_line_number, current_clause):
@@ -293,14 +303,29 @@ def parse_matching(in_contents, start_line_number, current_clause):
         raise Exception('matching used not followed by any matching functions on line: ' +
                         `start_line_number - 1`)
     lines_processed = 0
+    first_match = True
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]    
         if line.startswith("#") or line == "":
             # Comment or whitespace only.
             continue
-        if line.startswith("match_"):
+        if line.startswith("match_") or line.startswith("and match_"):
+            conjunction = None
+            if line.startswith("and") or not first_match:
+                conjunction = "and"
             current_clause.matching_functions.append(parse_matching_function(line,
-                                                                             line_number))
+                                                                             line_number,
+                                                                             conjunction))
+            first_match = False
+            lines_processed += 1
+        elif line.startswith("or match_"):
+            if first_match:
+                raise Exception("'or' used without previous matching function on line: " +
+                                `line_number`)
+            conjunction = "or"
+            current_clause.matching_functions.append(parse_matching_function(line,
+                                                                             line_number,
+                                                                             conjunction))
             lines_processed += 1
         elif line == "compare" or line == "do" or line == "goto":
             if lines_processed == 0:
@@ -339,9 +364,44 @@ def parse_timeout(in_contents, start_line_number, timeout):
         raise Exception('timeout must end with a goto.')
     return lines_processed
 
+def parse_side_effects(in_contents, start_line_number, side_effect_container):
+    if start_line_number is len(in_contents):
+        raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
+    side_effect_functions = ["print", "print_dump", "print_stacktrace", "print_of_rules",
+                             "print_time", "log", "log_dump", "log_stacktrace", "log_of_rules",
+                             "log_time", "set_to_field_value", "set", "inc", "dec",
+                             "add_of_rule", "remove_of_rule"]
+    lines_processed = 0
+    for line_number in range(start_line_number, len(in_contents)):
+        line = in_contents[line_number]
+        if line.startswith("#") or line == "":
+            # Comment or whitespace only.
+            continue
+        if line == "goto":
+            if lines_processed == 0:
+                raise Exception('"do" used not followed by any side-effects on line: ' +
+                                `start_line_number - 1`)
+            return lines_processed
+        fname_and_args = line.split("(")
+        fname = fname_and_args[0].strip()
+        if not (fname in side_effect_functions):
+            raise Exception("Unknown side effect function (" + `fname` + ") on line: " +
+                            `line_number`)
+        args = []
+        if len(fname_and_args) > 1:
+            args = fname_and_args[1].strip() # Get rid of trailing whitespace.
+            args = args[:-1] # Get rid of final parenthesis.
+            args = args.split(",") # split into arguments.
+            args = map(lambda x: x.strip(), args) # strip whitespace from each.
+            # TODO: Validate inputs to all side effect functions?
+        # TODO: Add direct support for inc(), dec() and set().
+        side_effect = "__" + line.strip()
+        side_effect_container.side_effects.append(side_effect)
+        lines_processed += 1
+
 def parse_goto(in_contents, start_line_number, goto_container):
     if start_line_number is len(in_contents):
-        raise Exception('goto used not followed by a destination on line: ' + `start_line_number - 1`)
+        raise Exception('"goto" used not followed by a destination on line: ' + `start_line_number - 1`)
     goto_str = ""
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
@@ -352,6 +412,8 @@ def parse_goto(in_contents, start_line_number, goto_container):
         if not is_valid_identifier(line_split[0]):
             raise Exception("Invalid goto identifier on line: " + `line_number`)
         goto_str = line_split[0]
+        if goto_str == "exit":
+            goto_str = "__exit"
         args = []
         if len(line_split) > 0:
             args = line_split[1:]
@@ -368,7 +430,6 @@ def parse_goto(in_contents, start_line_number, goto_container):
         goto_container.goto = goto_str
         break
     return 1 # One non-whitespace line is always processed here.
-    # TODO Special case for goto: exit
 
 def parse_clauses(in_contents, start_line_number, out_file):
     if start_line_number is len(in_contents):
@@ -399,7 +460,8 @@ def parse_clauses(in_contents, start_line_number, out_file):
             clauses.append(current_clause)
             lines_processed += lines_to_skip + 1
         elif line == "do":
-            raise NotImplementedError("'do' has not been implemented yet!")
+            lines_to_skip = parse_side_effects(in_contents, line_number + 1, current_clause)
+            lines_processed += lines_to_skip + 1
         elif line == "timeout":
             if timeout:
                 raise Exception("Multiple timeouts not allowed. Line: " + `line_number`)
