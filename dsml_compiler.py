@@ -67,12 +67,22 @@ class Clause:
             for x in self.matching_functions[1:]:
                 s += "\\\n    " + str(x)
         s += ":"
-        # TODO: print comparisons (adjust side_effect indentation?)
+        spaces = "        "
+        if self.comparisons:
+            if len(self.comparisons) > 1:
+                s += "\n" + spaces + "if " + self.comparisons[0] + "\\" 
+                for x in self.comparisons[1:]:
+                    s += "\n" + spaces + x + "\\"
+                s = s[:-1] # Remove extra line-continuation character.
+            else:
+                s += "\n" + spaces + "if " + self.comparisons[0]
+            s += ":"
+            spaces += "    "
         for x in self.side_effects:
-            s += "\n        " + str(x)
+            s += "\n" + spaces + str(x)
         # TODO: Add OF Rule return values.
         goto_args = shlex.split(self.goto)
-        s += "\n        return (True, [" + goto_args[0]
+        s += "\n" + spaces + "return (True, [" + goto_args[0]
         if len(goto_args) > 1:
             for x in goto_args[1:]:
                 s += ", " + x
@@ -364,6 +374,53 @@ def parse_timeout(in_contents, start_line_number, timeout):
         raise Exception('timeout must end with a goto.')
     return lines_processed
 
+def parse_comparisons(in_contents, start_line_number, clause):
+    if start_line_number is len(in_contents):
+        raise Exception('"compare" used not followed by any comparisons on line: ' + `start_line_number - 1`)
+    lines_processed = 0
+    first_comparison = True
+    for line_number in range(start_line_number, len(in_contents)):
+        line = in_contents[line_number]
+        if line.startswith("#") or line == "":
+            # Comment or whitespace only.
+            continue
+        if line == "do" or line == "goto":
+            if lines_processed == 0:
+                raise Exception('"compare" used not followed by any comparisons on line ' +
+                                `start_line_number - 1`)
+            return lines_processed
+        parts = line.split()
+        conjunction = ""
+        comparator = ""
+        if first_comparison:
+            if len(parts) != 3:
+                raise Exception("Invalid number of comparison operators on line " +
+                                `line_number`)
+            comparator = parts[1]
+        else:
+            if len(parts) < 3 or len(parts) > 4:
+                raise Exception("Invalid number of comparison operators on line " +
+                                `line_number`)
+            if len(parts) == 3:
+                comparator = parts[1]
+            elif len(parts) == 4:
+                comparator = parts[2]
+                conjunction = parts[0]
+
+        # TODO: Resolve global variables here.
+        if not (comparator in ["<", "<=", "==", ">=", ">"]):
+            raise Exception("Invalid comparator on line " + `line_number`)
+        if conjunction and not (conjunction in ["and", "or"]):
+            raise Exception("Invalid conjunction on line " + `line_number`)
+        if not conjunction and not first_comparison:
+            # Implicit 'and' needed.
+            clause.comparisons.append("and " + line)
+        else:
+            clause.comparisons.append(line)
+  
+        lines_processed += 1
+        first_comparison = False
+
 def parse_side_effects(in_contents, start_line_number, side_effect_container):
     if start_line_number is len(in_contents):
         raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
@@ -449,6 +506,7 @@ def parse_clauses(in_contents, start_line_number, out_file):
             lines_to_skip -= 1
             continue
 
+        # TODO: Restrict order (compare/matching before do/goto)
         if line.startswith("define state"):
             break
         if line == "matching":
@@ -461,6 +519,9 @@ def parse_clauses(in_contents, start_line_number, out_file):
             lines_processed += lines_to_skip + 1
         elif line == "do":
             lines_to_skip = parse_side_effects(in_contents, line_number + 1, current_clause)
+            lines_processed += lines_to_skip + 1
+        elif line == "compare":
+            lines_to_skip = parse_comparisons(in_contents, line_number + 1, current_clause)
             lines_processed += lines_to_skip + 1
         elif line == "timeout":
             if timeout:

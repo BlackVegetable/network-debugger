@@ -26,7 +26,9 @@ define state state-name argument-1 argument-2 ...
         conjunction match-func(arugments ...)
         [...]
     compare
-      value-1 comparator value-2
+        value-1 comparator value-2
+        conjunction value-3 comparator value-4
+        [...]
     do
         side-effect-func(arguments ...)
         [...]

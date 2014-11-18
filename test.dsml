@@ -21,7 +21,9 @@ define state initialState
     matching
         match_string("UDP", "dport", "53")
         or match_string("UDP", "sport", "12")
-    # No comparison(s) yet
+    compare
+        5 < 6
+        "Hello" == "Hello"
     do
         print("Got one!")
     goto
