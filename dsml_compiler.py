@@ -129,9 +129,11 @@ def main(input_path):
     output_path = input_path[:-1]
     with open(input_path, 'r') as input_file:
         try:
-            with open(output_path, "w") as output_file:
+            with open(output_path, "w") as output_file, open("./engine.py", "r") as engine_file:
                 in_contents = [s.strip() for s in input_file.read().splitlines()]
                 start_parse(in_contents, output_file)
+                engine = engine_file.read()
+                output_file.write("\n" + engine)
                 print "Compilation successful to file: " + output_path
         except Exception as e:
             print "Compilation failed: " + `e`
@@ -215,6 +217,8 @@ def write_header(out_file):
     out_file.write("# be altered by hand. To make changes, alter the\n")
     out_file.write("# DSML file with the same name as this file.\n\n")
     
+    out_file.write("\n__initial_rules = []\n")
+ 
 def write_global_dict(out_file):
     out_file.write("\n" + GLOBAL_DICT + " = {}") 
     
