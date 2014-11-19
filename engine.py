@@ -4,6 +4,7 @@ class Engine:
     def __init__(self):
         self.stacktrace = []
         self.arguments = []    
+        self.next_function = None # Need an initial function here TODO
     
     def handle_packet(self, packet,time_elipase=0):
         matched, next_function_and_args, of_rules_to_send = \
@@ -21,4 +22,14 @@ class Engine:
         
     def get_initial_rules(self):
         return __initial_rules
+
+# Side effects:
+
+def __print(text):
+    print "Engine (print): " + text
         
+# with open(file_path, "w") as logfile:
+#     Do some stuff, yeah!
+#     logfile.write("Some text")
+
+
