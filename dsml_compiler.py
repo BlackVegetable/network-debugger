@@ -11,7 +11,6 @@ import shlex
 # Starting state expects: "start variables" or "start filters" or "start state"
 
 GLOBAL_DICT = "__global"
-DSML_KEYWORDS = ["__exit"]
 
 class StateDefinition:
     def __init__(self, name, argument_list=[]):
@@ -159,7 +158,7 @@ def start_parse(in_contents, out_file):
         elif line == "start filters":
             lines_to_skip = parse_of_filters(in_contents, line_number + 1, out_file)
         elif line.startswith("start state"):
-            # TODO: Allow for starting state arguments
+            # TODO: Allow for starting state arguments (Low priority)
             words = line.split()
             if len(words) < 3:
                 raise Exception('"start state" used not followed by a state name on line: ' + line_number)
@@ -170,9 +169,9 @@ def start_parse(in_contents, out_file):
             return
 
 def main_parse(in_contents, start_line_number, out_file, starting_state_name):
-    # TODO: If starting state name not found ever, raise Exception.
     lines_to_skip = 0
     starting_state_found = False
+    out_file.write("\n__initial_state = " + starting_state_name + "\n")
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
         if line.startswith("#") or line == "":
@@ -208,10 +207,15 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
                 definition.timeout = timeout
 
             out_file.write(str(definition) + "\n")
+            if definition.name == starting_state_name:
+                starting_state_found = True
 
+    if not starting_state_found:
+        raise Exception("Starting State '" + starting_state_name + "' not found in definitions.")
+    return
     
 def write_header(out_file):
-    # TODO: Check if os is linux?
+    # TODO: Check if os is linux? (Low priority)
     out_file.write("#!/usr/bin/python\n\n")
     out_file.write("# This program is machine generated and should not\n")
     out_file.write("# be altered by hand. To make changes, alter the\n")
@@ -224,8 +228,7 @@ def write_global_dict(out_file):
     
 def is_valid_identifier(word):
     # Expected variable-name: letter + letter/underscore/number*
-    return re.match("[_A-Za-z][_a-zA-Z0-9]*", word) and not iskeyword(word) and \
-           not word in DSML_KEYWORDS
+    return re.match("[_A-Za-z][_a-zA-Z0-9]*", word) and not iskeyword(word)
     
 def is_valid_value(value):
     # Expected value: number or string
