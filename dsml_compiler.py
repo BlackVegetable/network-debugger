@@ -4,7 +4,6 @@ import sys
 import os.path
 from keyword import iskeyword
 import re
-import shlex
 
 # Meta-State-Machine
 #
@@ -54,7 +53,7 @@ class Clause:
         self.matching_functions = []
         self.comparisons = []
         self.side_effects = []
-        self.goto = ""
+        self.goto = None
 
     def __str__(self):
         if not self.matching_functions:
@@ -79,12 +78,13 @@ class Clause:
             spaces += "    "
         for x in self.side_effects:
             s += "\n" + spaces + str(x)
-        # TODO: Add OF Rule return values.
-        goto_args = shlex.split(self.goto)
-        s += "\n" + spaces + "return (True, [" + goto_args[0]
-        if len(goto_args) > 1:
-            for x in goto_args[1:]:
-                s += ", " + x
+        s += "\n        return (True, ["
+        for goto_arg in self.goto:
+            if isinstance(goto_arg, str):
+                s += " " + goto_arg + ","
+            else:
+                s += " " + `goto_arg` + ","
+        s = s[:-1] # Remove extraneous comma
         s += "], [])\n"
         return s
 
@@ -110,14 +110,15 @@ class Timeout:
             raise Exception("Timeout has no string representation with no goto.")
         s = "    if __time_elapsed >= " + `self.seconds` + ":"
         # TODO: Add OF Rules return values.
-        for effect in self.side_effects:    
+        for effect in self.side_effects:
             s += "\n        " + effect
-        goto_args = shlex.split(self.goto)
         s += "\n        return (True, ["
-        s += goto_args[0]
-        if len(goto_args) > 1:
-            for arg in goto_args[1:]:
-                s += ", " + arg
+        for goto_arg in self.goto:
+            if isinstance(goto_arg, str):
+                s += " " + goto_arg + ","
+            else:
+                s += " " + `goto_arg` + ","
+        s = s[:-1] # Remove extraneous comma
         s += "], [])\n"
         return s
 
@@ -187,7 +188,7 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
             state_name = words[2] # Known to exist because of trailing space above.
             if not is_valid_identifier(state_name):
                 raise Exception("Invalid state definition (bad name) on line: " + `line_number`)
-            # TODO: Allow for previously seen state names to compose states.
+            # TODO: Allow for previously seen state names to compose states. (Low priority)
             
             # Basic State Definition parsing
             args = []
@@ -376,7 +377,8 @@ def parse_timeout(in_contents, start_line_number, timeout):
             lines_processed += lines_to_skip + 1
             break
         elif line == "do":
-            raise NotImplementedError("'do' has not been implemented yet!")
+            lines_to_skip = parse_side_effects(in_contents, line_number + 1, timeout)
+            lines_processed += lines_to_skip + 1
     if not timeout.goto:
         raise Exception('timeout must end with a goto.')
     return lines_processed
@@ -457,7 +459,7 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container):
             args = args[:-1] # Get rid of final parenthesis.
             args = args.split(",") # split into arguments.
             args = map(lambda x: x.strip(), args) # strip whitespace from each.
-            # TODO: Validate inputs to all side effect functions?
+            # TODO: Validate inputs to all side effect functions? (Low priority)
         # TODO: Add direct support for inc(), dec() and set().
         side_effect = "__" + line.strip()
         side_effect_container.side_effects.append(side_effect)
@@ -466,32 +468,29 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container):
 def parse_goto(in_contents, start_line_number, goto_container):
     if start_line_number is len(in_contents):
         raise Exception('"goto" used not followed by a destination on line: ' + `start_line_number - 1`)
-    goto_str = ""
+    goto = None
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
         if line.startswith("#") or line == "":
             # Comment or whitespace only.
             continue
-        line_split = shlex.split(line) # Preserve whitespace in quotes.
-        if not is_valid_identifier(line_split[0]):
+        goto = re.findall(r'(?:[^\s"]|"(?:\\.|[^"])*")+', line)
+        if not is_valid_identifier(goto[0]):
             raise Exception("Invalid goto identifier on line: " + `line_number`)
-        goto_str = line_split[0]
-        if goto_str == "exit":
-            goto_str = "__exit"
+        if line == "exit":
+            goto = ["__exit"]
         args = []
-        if len(line_split) > 0:
-            args = line_split[1:]
+        if len(goto) > 0:
+            args = goto[1:]
         for arg in args:
-            # TODO: Support strings as arguments!
             # TODO: Verify that argument identifiers are in scope.
             if not is_valid_identifier(arg) and not is_valid_value(arg):
                 raise Exception("Invalid goto argument '" + arg + "' on line: " +
                                 `line_number`)
-            goto_str += " " + arg
-        if goto_str == "":
+        if not goto:
             raise Exception("goto used not followed by a destination on line: " +
                             `start_line_number - 1`)
-        goto_container.goto = goto_str
+        goto_container.goto = goto
         break
     return 1 # One non-whitespace line is always processed here.
 
@@ -513,7 +512,7 @@ def parse_clauses(in_contents, start_line_number, out_file):
             lines_to_skip -= 1
             continue
 
-        # TODO: Restrict order (compare/matching before do/goto)
+        # TODO: Restrict order (compare/matching before do/goto) (may be done implicitly? Low priority)
         if line.startswith("define state"):
             break
         if line == "matching":

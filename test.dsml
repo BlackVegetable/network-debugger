@@ -33,7 +33,16 @@ define state stateWithOnlyTimeout
     timeout
         60
     goto
-        stateWithOneArgument "42"
+        stateWithTwoArguments "Hello, I am a carrot!" 42
+
+define state stateWithTwoArguments arg1 arg2
+    timeout
+        10
+    do
+        print(arg1)
+        print(shiva)
+    goto
+        stateWithOneArgument arg2
 
 define state stateWithOneArgument arg1
     matching
