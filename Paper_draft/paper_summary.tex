@@ -37,9 +37,9 @@ it can be tricky to figure out which of the many pieces of the system is at
 fault.  Even monitoring the communication between the parts of the system can
 be a challenge.
 
-To help the users simplifying the debugging process of these systems, many proposals and tools have been presented (as discussed in section 7.) However, each of these proposals have disadvantages and drawbacks.(Elaborate here TODO.)
+To help the users simplifying the debugging process of these systems, many proposals and tools have been presented (as discussed in section 7.) However, these tools tend to be limited by a narrow domain (such as a network or remote sensors), require massive amounts of data and statistical analysis to operate, or have other limitations that keep them from being general-purpose network debuggers. One idea used in much of the related work is that of a user-defined script to model the intended execution of a system; we leverage that notion in our solution as well.
 
-We present our approach, the "Debugging State Machine" (DSM), an SDN-Enhanced Debugging Tool for Distributed Systems, which is a new way to observe and control events between the components of a distributed system using Software-Defined networking (SDN) and the "Debugging State Machine Language", a domain specific programming language (DSML).  This project was motivated by the existing need for a simple, practical debugging tool that met the following characteristics: 1) It exposes only relevant traffic to the debugger, simplifying the debugging process and performing far better in the face of large amounts of network traffic.  2) Users can make use of debugging concepts analagous to those found in a traditional debugger such as a breakpoint and a stacktrace. 3) Users can specify the expected behavior of the system and capture information regarding violations to those expectations.
+We present our approach, the "Debugging State Machine" (DSM), an SDN-Enhanced Debugging Tool for Distributed Systems, which is a new way to observe and control events between the components of a distributed system using Software-Defined networking (SDN) and the "Debugging State Machine Language" (DSML), a domain specific scripting language. This project was motivated by the existing need for a simple, practical debugging tool that met the following characteristics: 1) It exposes only relevant traffic to the debugger, simplifying the debugging process and performing far better in the face of large amounts of network traffic.  2) Users can make use of debugging concepts analagous to those found in a traditional debugger such as a breakpoint and a stacktrace. 3) Users can specify the expected behavior of the system and capture information regarding violations to those expectations.
 
 Using these characteristics as our goals, we built and designed our DSM approach leveraging the OpenFlow interface to meet the performance criteria, a controller capable of producing contextual information about its status similar to a stacktrace, and our DSML to allow the user to custom-tailor the debugger to their protocol's expectations.
 
@@ -64,6 +64,7 @@ The DSML protocol script written by the user is read into a compiler to produce 
   \item POX Controller
   \item Controller Sniffing via Scapy
   \item Connection between switch and controller
+  \item Stacktrace display?
 \end{itemize}
 
 \section{\LARGE Evaluation}
@@ -79,7 +80,6 @@ The DSML protocol script written by the user is read into a compiler to produce 
 
 \begin{itemize}
   \item Syntactic Sugar
-  \item Extend Openflow (maybe?)
   \item Composition of Protocols
   \item Parallel DSMs
   \item Support for non-OF enabled switches
@@ -87,15 +87,15 @@ The DSML protocol script written by the user is read into a compiler to produce 
 
 \section{\LARGE Related Work}
 
-The topic of debugging distributed systems has long been studied\cite{miller1988breakpoints}, but as the scale and functionalities expected within a networked system continues to grow, the components of today's distributed system are not only deployed in a distributed fashion but are also difficult to reason about as every component within a distributed system seems to be written in a different language.\cite{chow2014mystery}. While there are good examples to debug specific distributed applications within particular domains, such as within MPI applications\cite{dryden2014pgdb}, the need for a general purpose debugging tool had not been previously met.
+The topic of debugging distributed systems has long been studied\cite{miller1988breakpoints}, but as the scale and functionalities expected within a networked system continue to grow, the components of today's distributed system are not only deployed in a distributed fashion but are also difficult to reason about as every component within a distributed system seems to be written in a different language.\cite{chow2014mystery}. While there were good examples to debug specific distributed applications within particular domains, such as within MPI applications\cite{dryden2014pgdb}, the need for a general purpose debugging tool had not been previously met.
 
-Using "Big Data" techniques\cite{chow2014mystery} to understand and model the behavior of a distributed system (single request triggers parallel execution of multiple software components) is a good idea since with the scale grown up, there are sufficient observations for the learning procedure. (TODO, this and the following paragraphs still need to be refined.)
+Using Big Data sampling techniques\cite{chow2014mystery} to understand and model the behavior of a distributed system is a good idea in large-scale settings as Big Data learning functions well when sufficient input is available. However, for smaller-scale settings (such as those that might be addressed by our DSM), it may not have enough input for the learning algorithms to function.
 
-There are multiple ways to observe and monitor distributed systems and the applications running on them. lprof\cite{zhao2014lprof} is statically listen to the binary code to infer how logs can be parsed and then the intertwined log entries can be associated to specific individual request. There are also low-cost hardware solution to it. Minerva\cite{sommer2013minerva} affects no execution timing and is non-intrusive. By using on-chip debug port, Minerva got full control of the system(wireless sensor network) that can stopping on one breaking point synchronously.
+There are multiple ways to observe and monitor distributed systems and the applications running on them. lprof\cite{zhao2014lprof} uses static analysis of binary source code to infer how logs can be parsed and correlated with individual requests for performance measurements. Minerva\cite{sommer2013minerva} a remote sensor network debugging tool introduced a synchronous "breakpoint" while avoiding modifying the execution timing of its nodes. This is a hardware solution involving attaching a debug board to each node.
 
-Other approaches including adding units either on the system or on the applications. Design a Pervasive Debugger\cite{ho2005design} for distributed applications then execute the target in a virtual environment the debugger can get control and examine the application. Declarative Tracepoints\cite{cao2008declarative} is providing a debugging system allow uses to insert action-associated checkpoints, that the applications to be debugged at runtime and require no change to source code.
+In the paper "On the design of a pervasive debugger" by Ho et al.\cite{ho2005design} distributed applications are executed in a virtual environment where the debugger can simulate the execution of the actual program but allow for breakpoints and run-time examination not possible outside of a virtualized environment. Declarative Tracepoints\cite{cao2008declarative} provides a debugging system specifically for sensor networks that allows users to insert action-associated checkpoints in a SQL-like script in a manner similar to our DSML scripts.
 
-Some instructive research allowed users to describe their expectations or release them from repetitious operations. Data Centric\cite{abramson2010data} allow uses to declare their expectations about the program state as a whole than a single process state, enable scalable solution to very large problems. Dataflow Language\cite{marceau2004dataflow} is programmable or scriptable for users to define the debugging work.
+Some instructive research titled "Data centric highly parallel debugging" by Abramson et al.\cite{abramson2010data} focused on having users describe their expectations in terms of the state of data independent of individual process execution. Work by Marceau et al. on "A Dataflow Language for Scriptable Debugging"\cite{marceau2004dataflow} demonstrates the power of user-defined scripts for expressing debugging goals.
 
 
 \section{\LARGE Conclusion}
