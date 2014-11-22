@@ -57,10 +57,13 @@ The DSML protocol script written by the user is read into a compiler to produce 
 
 \section{\LARGE Implementation}
 
+We parse user-created DSML files and compile them into python syntax using a compiler we wrote in python. Our compiler will attempt to create the DSM from the Engine code (discussed later) and the user-created DSML script, but on failure will attempt to notify the user why the failure occured and typically will indicate the line at which the invalid input was detected. Not all possible syntactic mistakes are caught by our present compiler, but we believe a reasonable majority of user-errors will be caught and reported with meaningful error messages that direct the user to correct the script to comply with the DSML specification.
+
+The DSM Engine is code that is constant regardless of what the user script dictates. This Engine interprets the control flow logic encoded by the user-script and provides the implementation of the side-effect operations listed in the DSML specification. The DSM Engine and the DSML script are literally concatenated into a single python file which is then syntactically correct python code. This is acomplished through some basic name mangling of user defined variables, state names, and side-effect function calls. Our name mangling is not sufficient to stop a user with the intent to sabotage their own DSM from functioning but we feel it will handle all cases of accidentally shared variable names.
+
+The DSM itself uses the scapy(REFERENCE HERE!) library to perform deep packet inspection. While the DPI capabilities within scapy are powerful, the library is not exceptionally well documented, nor does it support many helper functions to simplify the DPI process. Thus, we wrote a small library of functions that are available to the end-user in their DSML script to make matching on field values in packets much simpler.
+
 \begin{itemize}
-  \item DSML parsing
-  \item DSM DPI
-  \item DSML Engine (concatenation of code & compiled output)
   \item POX Controller
   \item Controller Sniffing via Scapy
   \item Connection between switch and controller
