@@ -21,7 +21,7 @@ class StateDefinition:
     def __str__(self):
         if not self.clauses and not self.timeout:
             raise Exception("State has no string representation with no clauses.")
-        s = "\ndef " + self.name + "(self, pkt"
+        s = "\ndef " + self.name + "(self, packet"
         for arg in self.argument_list:
             s += ", " + arg
         s += ", __time_elapsed=0):"
@@ -274,7 +274,7 @@ def parse_matching_function(s, line_number, conjunction):
                is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
                is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
                is_valid_boolean(args[3]):
-                arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
+                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
                               args[2] + ", " + args[3] + ")"
             else:
                 raise Exception("Invalid arguments for function " + fname +
@@ -284,7 +284,7 @@ def parse_matching_function(s, line_number, conjunction):
             if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
                is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
                is_valid_string(args[2]) or is_valid_identifier(args[2]):
-                arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
+                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
                               args[2] + ")"
             else:
                 raise Exception("Invalid arguments for function " + fname +
@@ -300,7 +300,7 @@ def parse_matching_function(s, line_number, conjunction):
             if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
                is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
                is_valid_number(args[2]) or is_valid_identifier(args[2]):
-                arg_string += "(pkt, " + args[0] + ", " + args[1] + ", " + \
+                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
                               `args[2]` + ")"
             else:
                 raise Exception("Invalid arguments for function " + fname +
@@ -433,8 +433,8 @@ def parse_comparisons(in_contents, start_line_number, clause):
 def parse_side_effects(in_contents, start_line_number, side_effect_container):
     if start_line_number is len(in_contents):
         raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
-    side_effect_functions = ["print", "print_dump", "print_stacktrace", "print_of_rules",
-                             "print_time", "log", "log_dump", "log_stacktrace", "log_of_rules",
+    side_effect_functions = ["print", "print_packet", "print_stacktrace", "print_of_rules",
+                             "print_time", "log", "log_packet", "log_stacktrace", "log_of_rules",
                              "log_time", "set_to_field_value", "set", "inc", "dec",
                              "add_of_rule", "remove_of_rule"]
     lines_processed = 0
