@@ -57,3 +57,18 @@ def __log_stacktrace(filename, stacktrace):
     with open(filename, "a") as logfile:
         for i in range(len(stacktrace)):
             logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1]))
+
+def __inc(variable):
+    __global[variable] = __global[variable] + 1
+
+def __dec(variable):
+    __global[variable] = __global[variable] - 1
+
+def __set(variable, value):
+    __global[variable] = value
+
+def __set_to_field_value(packet, variable, protocol, field_name):
+    __global[variable] = get_value(packet, protocol, field_name)
+
+
+
