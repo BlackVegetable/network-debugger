@@ -46,6 +46,16 @@ def main():
     print match_atmost(pkt, "IP", "len", 900)
     print match_exactly(pkt, "IP", "len", 66)
 
+def get_value(pkt, protocol, field_name):
+    ''' returns the value of the field with the given name in the given packet
+    at the given protocol layer. '''
+    sub_pkt = pkt.getlayer(protocol)
+    if sub_pkt is None:
+        return None
+    if not hasattr(sub_pkt, field_name):
+        return None:
+    return getattr(sub_pkt, field_name)
+
 def match_string(pkt, protocol, field_name, val, full_match=True):
     ''' Determines if a packet has a matching field value.
     pkt: The packet to inspect
