@@ -7,6 +7,21 @@ class Engine:
         self.stacktrace = [] # stacktrace list creation
         self.arguments = []    
         self.next_function = __initial_state
+        self.current_of_rules = set(__initial_rules)
+
+    def combine_of_rules(self, of_rules_list):
+        '''Combines a list of OF rules into an existing set.
+        Removes old rules that are given remove commands.'''
+
+        # Awkward iteration ahead, better way to do this? TODO
+        for new_rule in of_rules_list:
+            should_add = True
+            for old_rule in self.current_of_rules:
+                if new_rule.is_opposite(old_rule):
+                    self.current_of_rules.remove(old_rule)
+                    should_add = False
+            if should_add:
+                self.current_of_rules.add(new_rule)
 
     def handle_packet(self, packet, time_elapsed=0):
         '''Should be called with either a packet object (scapy)
@@ -27,6 +42,7 @@ class Engine:
                 packet = "Timeout"
             self.stacktrace.append([self.next_function.__name__, packet])
 
+        self.combine_of_rules(__pending_of_rules)
         return __pending_of_rules # Mutated within DSML script
         
     def get_initial_rules(self):
@@ -53,6 +69,11 @@ def __print_stacktrace(stacktrace):
     for i in range(len(stacktrace)):
         print "frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1])
 
+def __print_of_rules(self):
+    '''Prints the Open Flow filters currently applied to the controller/switch.'''
+    for rule in self.current_of_rules:
+        print str(rule)
+
 def __log(filename, msg):
     '''Log a given message to a given file.'''
     with open(filename, "a") as logfile:
@@ -73,6 +94,12 @@ def __log_stacktrace(filename, stacktrace):
     with open(filename, "a") as logfile:
         for i in range(len(stacktrace)):
             logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1]))
+
+def __log_of_rules(self, filename):
+    '''Logs the Open Flow filters currently applied to the controller/switch to a given file.'''
+    with open(filename, "a") as logfile:
+        for rule in self.current_of_rules:
+            logfile.write(str(rule))
 
 def __inc(variable):
     '''Increment a variable'''
