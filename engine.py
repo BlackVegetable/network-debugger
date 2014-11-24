@@ -1,4 +1,4 @@
-# this is engine code
+# DSM Engine
 
 from datetime import datetime
 
@@ -9,6 +9,10 @@ class Engine:
         self.next_function = __initial_state
 
     def handle_packet(self, packet, time_elapsed=0):
+        '''Should be called with either a packet object (scapy)
+        or with None for the packet and a positive integer for
+        time_elapsed. It is an error to call it with anything else.
+        '''
         __pending_of_rules = [] # Clear the list.
         matched, next_function_and_args = self.next_function(packet,
                                                              time_elapsed,
@@ -26,64 +30,70 @@ class Engine:
         return __pending_of_rules # Mutated within DSML script
         
     def get_initial_rules(self):
+        '''Simply returns a list of OFSideEffects that need to be 
+        implemented by the controller before the DSM starts up.'''
         return __initial_rules
 
 # Side effects:
 
-# print text to console
-def __print(text):
-    print "Engine (print): " + text
-   
-#print packet to console     
+def __print(msg):
+    '''Print a given message to the console.'''
+    print "Engine (print): " + msg
+      
 def __print_packet(packet):
+    '''Print the current packet's contents to the console.'''
     print str(packet)
 
-#print time to console
 def __print_time():
+    '''Print the current timestamp to the console.'''
     print datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-#print stacktrace to console using loop
 def __print_stacktrace(stacktrace):
+    '''Print the network 'stacktrace' to the console.'''
     for i in range(len(stacktrace)):
         print "frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1])
 
-#log to a file ( mesaages only)
 def __log(filename, msg):
+    '''Log a given message to a given file.'''
     with open(filename, "a") as logfile:
         logfile.write(msg)
 
-#log to a file (packets only)
-
 def __log_packet(filename, packet):
+    '''Log the current packet's contents to a given file.'''
     with open(filename, "a") as logfile:
         logfile.write(str(packet))
 
-#log to a file (time only)
-
 def __log_time(filename):
+    '''Log the current timestamp to a given file.'''
     with open(filename, "a") as logfile:
         logfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-#log to a file ( stacktrace only)
 def __log_stacktrace(filename, stacktrace):
+    '''Log a network 'stacktrace' to a given file.'''
     with open(filename, "a") as logfile:
         for i in range(len(stacktrace)):
             logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1]))
 
 def __inc(variable):
+    '''Increment a variable'''
     __global[variable] = __global[variable] + 1
 
 def __dec(variable):
+    '''Decrement a variable'''
     __global[variable] = __global[variable] - 1
 
 def __set(variable, value):
+    '''Set a variable to a value'''
     __global[variable] = value
 
 def __set_to_field_value(packet, variable, protocol, field_name):
+    '''Set a variable to a value found in a packet.'''
     __global[variable] = get_value(packet, protocol, field_name)
 
 def __add_of_rule(src_ip, dst_ip, src_port, dst_port):
+    '''Request that an OpenFlow filter be added by the controller.'''
     __pending_of_rules.append(OF.OFSideEffect("add", src_ip, dst_ip, src_port, dst_port))
 
 def __remove_of_rule(src_ip, dst_ip, src_port, dst_port):
+    '''Request that an OpenFlow filter be removed by the controller.''' 
     __pending_of_rules.append(OF.OFSideEffect("remove", src_ip, dst_ip, src_port, dst_port))
