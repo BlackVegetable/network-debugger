@@ -1,9 +1,10 @@
+# this is engine code
 
 from datetime import datetime
 
 class Engine:    
     def __init__(self):
-        self.stacktrace = []
+        self.stacktrace = [] # stacktrace list creation
         self.arguments = []    
         self.next_function = __initial_state
 
@@ -28,32 +29,42 @@ class Engine:
 
 # Side effects:
 
+# print text to console
 def __print(text):
     print "Engine (print): " + text
-        
+   
+#print packet to console     
 def __print_packet(packet):
     print str(packet)
 
+#print time to console
 def __print_time():
     print datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+#print stacktrace to console using loop
 def __print_stacktrace(stacktrace):
     for i in range(len(stacktrace)):
         print "frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1])
 
-def __log(filename, msg):
-    with open(filename, "a") as logfile:
+#log to a file ( mesaages only)
+def __log(Message_logfile.log, msg):
+    with open(Message_logfile.log, "a") as logfile:
         logfile.write(msg)
 
-def __log_packet(filename, packet):
-    with open(filename, "a") as logfile:
+#log to a file (packets only)
+
+def __log_packet(Packet_logfile.log, packet):
+    with open(Packet_logfile.log, "a") as logfile:
         logfile.write(str(packet))
 
-def __log_time(filename):
-    with open(filename, "a") as logfile:
+#log to a file (time only)
+
+def __log_time(time_logfile.log):
+    with open(time_logfile.log, "a") as logfile:
         logfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-def __log_stacktrace(filename, stacktrace):
-    with open(filename, "a") as logfile:
+#log to a file ( stacktrace only)
+def __log_stacktrace(stacktrace_logfile.log, stacktrace):
+    with open(stacktrace_logfile.log, "a") as logfile:
         for i in range(len(stacktrace)):
             logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + str(stacktrace[i][1]))
