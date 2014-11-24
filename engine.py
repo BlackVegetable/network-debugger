@@ -9,10 +9,10 @@ class Engine:
         self.next_function = __initial_state
 
     def handle_packet(self, packet, time_elapsed=0):
-        matched, next_function_and_args, of_rules_to_send = \
-                                        self.next_function(packet,
-                                                           time_elapsed,
-                                                           *self.arguments)
+        __pending_of_rules = [] # Clear the list.
+        matched, next_function_and_args = self.next_function(packet,
+                                                             time_elapsed,
+                                                             *self.arguments)
         self.next_function = next_function_and_args[0]
         if len(next_function_and_args) > 1:
             self.arguments = next_function_and_args[1:]
@@ -22,7 +22,8 @@ class Engine:
             if packet is None:
                 packet = "Timeout"
             self.stacktrace.append([self.next_function.__name__, packet])
-        return of_rules_to_send
+
+        return __pending_of_rules # Mutated within DSML script
         
     def get_initial_rules(self):
         return __initial_rules
@@ -81,5 +82,8 @@ def __set(variable, value):
 def __set_to_field_value(packet, variable, protocol, field_name):
     __global[variable] = get_value(packet, protocol, field_name)
 
+def __add_of_rule(src_ip, dst_ip, src_port, dst_port):
+    __pending_of_rules.append(OF.OFSideEffect("add", src_ip, dst_ip, src_port, dst_port))
 
-
+def __remove_of_rule(src_ip, dst_ip, src_port, dst_port):
+    __pending_of_rules.append(OF.OFSideEffect("remove", src_ip, dst_ip, src_port, dst_port))

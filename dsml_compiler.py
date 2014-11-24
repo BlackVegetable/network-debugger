@@ -222,6 +222,8 @@ def write_header(out_file):
     out_file.write("# be altered by hand. To make changes, alter the\n")
     out_file.write("# DSML file with the same name as this file.\n\n")
     
+    out_file.write("import of_side_effect as OF\n\n")
+    
     out_file.write("\n__initial_rules = []\n")
  
 def write_global_dict(out_file):

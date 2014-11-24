@@ -76,8 +76,8 @@ side-effect-func:
   - set(variable, value)
   - inc(variable)
   - dec(variable)
-  - add_of_rule(arguments)
-  - remove_of_rule(arguments)
+  - add_of_rule(src_ip, dst_ip, src_port, dst_port) # Use None for wildcard
+  - remove_of_rule(src_ip, dst_ip, src_port, dst_port) # Use None for wildcard
 destination:
   - state-name
   - exit # No arguments allowed.
