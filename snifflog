@@ -1,0 +1,95 @@
+>>> sniff(filter="icmp and host 10.1.3.3", count=100)
+<Sniffed: TCP:0 UDP:0 ICMP:100 Other:0>
+
+>>> a=_
+>>> a.nsummary
+<bound method PacketList.nsummary of <Sniffed: TCP:0 UDP:0 ICMP:100 Other:0>>
+
+>>> a[0]
+<Ether  dst=00:04:23:b7:19:60 src=00:04:23:b7:41:07 type=0x800 |<IP  version=4L ihl=5L tos=0x0 len=84 id=0 flags=DF frag=0L ttl=64 proto=icmp chksum=0x20a3 src=10.1.3.3 dst=10.1.3.2 options=[] |<ICMP  type=echo-request code=0 chksum=0xfa28 id=0xddf seq=0x1a |<Raw  load='<\xfaST\x00\x00\x00\x00\x9b\xbc\x05\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567' |>>>>
+
+>>> sniff(iface="eth5", prn=lambda x: x.show())
+###[ Ethernet ]###
+  dst= 00:04:23:b7:19:60
+  src= 00:04:23:b7:41:07
+  type= 0x800
+###[ IP ]###
+     version= 4L
+     ihl= 5L
+     tos= 0x0
+     len= 84
+     id= 0
+     flags= DF
+     frag= 0L
+     ttl= 64
+     proto= icmp
+     chksum= 0x20a3
+     src= 10.1.3.3
+     dst= 10.1.3.2
+     \options\
+###[ ICMP ]###
+        type= echo-request
+        code= 0
+        chksum= 0x256e
+        id= 0xefb
+        seq= 0x1
+###[ Raw ]###
+           load= '\xa6\x02TT\x00\x00\x00\x00\x00l\n\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567'
+###[ Ethernet ]###
+  dst= 00:04:23:b7:41:07
+  src= 00:04:23:b7:19:60
+  type= 0x800
+###[ IP ]###
+     version= 4L
+     ihl= 5L
+     tos= 0x0
+     len= 84
+     id= 47077
+     flags= 
+     frag= 0L
+     ttl= 64
+     proto= icmp
+     chksum= 0xa8bd
+     src= 10.1.3.2
+     dst= 10.1.3.3
+     \options\
+###[ ICMP ]###
+        type= echo-reply
+        code= 0
+        chksum= 0x2d6e
+        id= 0xefb
+        seq= 0x1
+###[ Raw ]###
+           load= '\xa6\x02TT\x00\x00\x00\x00\x00l\n\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567'
+###[ Ethernet ]###
+  dst= 00:04:23:b7:19:60
+  src= 00:04:23:b7:41:07
+  type= 0x806
+###[ ARP ]###
+     hwtype= 0x1
+     ptype= 0x800
+     hwlen= 6
+     plen= 4
+     op= who-has
+     hwsrc= 00:04:23:b7:41:07
+     psrc= 10.1.3.3
+     hwdst= 00:00:00:00:00:00
+     pdst= 10.1.3.2
+###[ Ethernet ]###
+  dst= 00:04:23:b7:41:07
+  src= 00:04:23:b7:19:60
+  type= 0x806
+###[ ARP ]###
+     hwtype= 0x1
+     ptype= 0x800
+     hwlen= 6
+     plen= 4
+     op= is-at
+     hwsrc= 00:04:23:b7:19:60
+     psrc= 10.1.3.2
+     hwdst= 00:04:23:b7:41:07
+     pdst= 10.1.3.3
+###[ Padding ]###
+        load= '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+ 
