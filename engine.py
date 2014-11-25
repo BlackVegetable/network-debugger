@@ -41,7 +41,7 @@ class Engine:
             self.stacktrace.append([self.next_function.__name__, packet])
 
         self.combine_of_rules(__pending_of_rules)
-        return __pending_of_rules # Mutated within DSML script
+        return [matched].extend(__pending_of_rules) # Mutated within DSML script
         
     def get_initial_rules(self):
         '''Simply returns a list of OFSideEffects that need to be 
