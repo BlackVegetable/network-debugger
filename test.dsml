@@ -29,9 +29,22 @@ define state initialState
         "Hello" == "Hello"
     do
         set(favorite_protocol, "TCP")
+        print(favorite_protocol)
+        print(blagga)
         inc(blagga)
+        print(blagga)
         dec(x)
         print("Got one!")
+    goto
+        stateWithOnlyTimeout
+    matching
+        match_regex("UDP", "payload", "structure")
+    compare
+        -42 < 0
+    do
+        print(shiva)
+        set(shiva, "acceptable, yes?")
+        print(shiva)
     goto
         stateWithOnlyTimeout
 
@@ -44,6 +57,7 @@ define state stateWithOnlyTimeout
 define state lotsOfPrinting theAnswer
     matching
         match_string("UDP", "dport", "53")
+        or match_regex("UDP", "payload", "structure")
     do
         print(blagga)
         set(blagga, theAnswer)
@@ -52,6 +66,7 @@ define state lotsOfPrinting theAnswer
         dec(x)
         dec(x)
         print(x)
+        print_stacktrace()
     goto
         exit
 
@@ -62,7 +77,7 @@ define state stateWithTwoArguments arg1 arg2
         print(arg1)
         print(shiva)
     goto
-        stateWithOneArgument arg2
+        lotsOfPrinting arg2
 
 define state stateWithOneArgument arg1
     matching

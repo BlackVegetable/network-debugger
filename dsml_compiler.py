@@ -9,7 +9,7 @@ import re
 #
 # Starting state expects: "start variables" or "start filters" or "start state"
 
-GLOBAL_DICT = "__global"
+GLOBAL_DICT = "global00"
 META_DICT = {}
 
 class StateDefinition:
@@ -22,14 +22,14 @@ class StateDefinition:
     def __str__(self):
         if not self.clauses and not self.timeout:
             raise Exception("State has no string representation with no clauses.")
-        s = "\ndef " + self.name + "(self, packet"
+        s = "\ndef " + self.name + "(self, packet, time_elapsed00"
         for arg in self.argument_list:
             s += ", " + arg
-        s += ", __time_elapsed=0):"
+        s += "):"
         if self.timeout:
             s += "\n" + str(self.timeout)
         else:
-            s += "\n    if __time_elapsed:"
+            s += "\n    if time_elapsed00:"
             s += "\n        return (False, [" + self.name
             for arg in self.argument_list:
                 s += ", " + arg
@@ -109,7 +109,7 @@ class Timeout:
             raise Exception("Timeout cannot have non-positive duration.")
         if not self.goto:
             raise Exception("Timeout has no string representation with no goto.")
-        s = "    if __time_elapsed >= " + `self.seconds` + ":"
+        s = "    if time_elapsed00 >= " + `self.seconds` + ":"
         for effect in self.side_effects:
             s += "\n        " + effect
         s += "\n        return (True, ["
@@ -126,7 +126,7 @@ def main(input_path):
     if input_path[-4:] != "dsml":
         print "Compilation failed: Input file not a .dsml file"
         return
-    output_path = input_path[:-1]
+    output_path = input_path[:-5] + "_dsm.py"
     with open(input_path, 'r') as input_file:
         try:
             with open(output_path, "w") as output_file, open("./engine.py", "r") as engine_file:
@@ -218,7 +218,7 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
     if not starting_state_found:
         raise Exception("Starting State '" + starting_state_name + "' not found in definitions.")
 
-    out_file.write("\n__initial_state = " + starting_state_name + "\n")
+    out_file.write("\ninitial_state00 = " + starting_state_name + "\n")
     return
     
 def write_header(out_file):
@@ -228,24 +228,26 @@ def write_header(out_file):
     out_file.write("# be altered by hand. To make changes, alter the\n")
     out_file.write("# DSML file with the same name as this file.\n\n")
     
-    out_file.write("import of_side_effect as OF\n\n")
+    out_file.write("import of_side_effect as OF\n")
+    out_file.write("from datetime import datetime\n")
+    out_file.write("from scapy_matching import *\n\n")
 
-    out_file.write("\n__initial_rules = []\n")
+    out_file.write("\ninitial_rules00 = []\n")
  
 def write_global_dict(out_file):
     out_file.write("\n" + GLOBAL_DICT + " = {}") 
     
 def is_valid_identifier(word):
     # Expected variable-name: letter + letter/underscore/number*
-    return re.match("[_A-Za-z][_a-zA-Z0-9]*", word) \
+    return re.match("^[_A-Za-z][\[\]_a-zA-Z0-9]*$", word) \
            and not iskeyword(word)
     
 def is_valid_value(value):
     # Expected value: number or string
-    return re.match("(\".*\")|(-?\d+)", value)
+    return re.match("^(\".*\")|(-?\d+)$", value)
     
 def is_valid_string(word):
-    return re.match("\".*\"", word)
+    return re.match("^'.*'$", word) or re.match('^".*"$', word) 
 
 def is_valid_number(word):
     try:
@@ -259,7 +261,7 @@ def is_valid_boolean(word):
        return True
     return False
 
-def apply_global_scope(maybe_variable, def_args, line_number):
+def apply_global_scope(maybe_variable, def_args, line_number, name_wanted=False):
     '''Replaces a globally scoped variable with its mangled representation.
     If the given "maybe_variable" is defined within the definition's arguments
     instead, it is simply returned unchanged. Will also return any non-variable
@@ -267,7 +269,10 @@ def apply_global_scope(maybe_variable, def_args, line_number):
     an identifier and is not contained in any valid scope.'''
     if is_valid_identifier(maybe_variable):
         if maybe_variable in META_DICT:
-            return GLOBAL_DICT + "['" + maybe_variable + "']"
+            if name_wanted:
+                return "'" + maybe_variable + "'"
+            else:
+                return GLOBAL_DICT + "['" + maybe_variable + "']"
         elif not (maybe_variable in def_args):
             raise Exception("Unknown variable name '" + maybe_variable + "' near " +
                             "line " + `line_number`)
@@ -295,39 +300,39 @@ def parse_matching_function(s, line_number, conjunction, def_args):
     arg_string = ""
     if fname == "match_string" and len(args) == 4:
         # Protocol, field_name, val, full_match
-        if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
-           is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
-           is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
-           is_valid_boolean(args[3]):
-            arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
-                          args[2] + ", " + args[3] + ")"
-        else:
-            raise Exception("Invalid arguments for function " + fname +
-                            " near line: " + `line_number`)
+        #if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+        #   is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+        #   is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
+        #   is_valid_boolean(args[3]):
+        arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
+                        args[2] + ", " + args[3] + ")"
+        #else:
+        #    raise Exception("Invalid arguments for function " + fname +
+        #                    " near line: " + `line_number`)
 
     elif len(args) == 3 and (fname == "match_string" or fname == "match_regex"):
         # Protocol, field_name, val
-        if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
-           is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
-           is_valid_string(args[2]) or is_valid_identifier(args[2]):
-            arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
-                          args[2] + ")"
-        else:
-            raise Exception("Invalid arguments for function " + fname +
-                            "(" + `args` + ") near line: " + `line_number`)
+        #if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+        #   is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+        #   is_valid_string(args[2]) or is_valid_identifier(args[2]):
+        arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
+                       args[2] + ")"
+        #else:
+        #    raise Exception("Invalid arguments for function " + fname +
+        #                    "(" + str(args) + ") near line: " + `line_number`)
         
     elif fname == "match_atleast" or fname == "match_atmost" or fname == "match_exactly":
         if len(args) == 3:
             # Protocol, field_name, val
             # Should we allow for string <--> number comparisons?
-            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
-               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
-               is_valid_number(args[2]) or is_valid_identifier(args[2]):
-                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
+        #    if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+        #       is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+        #       is_valid_number(args[2]) or is_valid_identifier(args[2]):
+            arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
                               `args[2]` + ")"
-            else:
-                raise Exception("Invalid arguments for function " + fname +
-                                " near line: " + `line_number`)
+        #    else:
+        #        raise Exception("Invalid arguments for function " + fname +
+        #                        " near line: " + `line_number`)
         else:
             raise Exception("Invalid argument count for function " + fname +
                             " near line: " + `line_number`)
@@ -491,13 +496,21 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
             args = map(lambda x: x.strip(), args) # strip whitespace from each.
             # TODO: Validate inputs to all side effect functions? (Low priority)
         
-        # Only validating that the variable names are in some valid scope.
-        # This will throw an exception if the name is not in scope.
-        # We will need to translate side effect values within __str__.
-        for arg in args:
-            ignored = apply_global_scope(arg, def_args, line_number)
+        name_wanted = False
+        if fname in ["set", "dec", "inc", "set_to_field_value", "set_to_regex_match"]:
+            name_wanted = True    
+        arg_string = "("
+        for i in range(len(args)):
+            args[i] = apply_global_scope(args[i], def_args, line_number, name_wanted)
+            arg_string += args[i] + ","
+        if len(arg_string) > 1:
+            arg_string = arg_string[:-1] + ")" # Replace final comma.
 
-        side_effect = "__" + line.strip()
+        if fname == "print_stacktrace" or fname == "log_stacktrace":
+            # Needed to transmit stacktrace information.
+            arg_string = "(self)" 
+
+        side_effect = fname + "00" + arg_string
         side_effect_container.side_effects.append(side_effect)
         lines_processed += 1
 
@@ -514,7 +527,7 @@ def parse_goto(in_contents, start_line_number, goto_container, def_args):
         if not is_valid_identifier(goto[0]):
             raise Exception("Invalid goto identifier on line: " + `line_number`)
         if line == "exit":
-            goto = ["__exit"]
+            goto = ["exit00"]
         args = []
         if len(goto) > 0:
             args = goto[1:]
