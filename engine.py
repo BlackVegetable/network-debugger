@@ -12,16 +12,14 @@ class Engine:
     def combine_of_rules(self, of_rules_list):
         '''Combines a list of OF rules into an existing set.
         Removes old rules that are given remove commands.'''
-
-        # Awkward iteration ahead, better way to do this? TODO
-        for new_rule in of_rules_list:
-            should_add = True
-            for old_rule in self.current_of_rules:
-                if new_rule.is_opposite(old_rule):
-                    self.current_of_rules.remove(old_rule)
-                    should_add = False
-            if should_add:
-                self.current_of_rules.add(new_rule)
+        combined_set = set()
+        for rule in of_rules_list:
+            if rule.opposite() not in self.current_of_rules:
+                combined_set.add(rule)
+        for rule in self.current_of_rules:
+            if rule.opposite() not in of_rules_list:
+                combined_set.add(rule)
+        self.current_of_rules = combined_set
 
     def handle_packet(self, packet, time_elapsed=0):
         '''Should be called with either a packet object (scapy)

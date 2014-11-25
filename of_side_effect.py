@@ -20,6 +20,13 @@ class OFSideEffect:
                 ((self.command == "add" and other.command == "remove") or
                  (self.command == "remove" and other.command == "add"))
 
+    def opposite(self):
+        if self.command == "add":
+            return OFSideEffect("remove", self.src_ip, self.dst_ip,
+                                self.src_port, self.dst_port)
+        return OFSideEffect("add", self.src_ip, self.dst_ip,
+                            self.src_port, self.dst_port)
+
     def __str__(self):
         s = self.command + ":"
         if self.source_ip:
