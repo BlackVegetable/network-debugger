@@ -28,6 +28,9 @@ define state initialState
         5 < 6
         "Hello" == "Hello"
     do
+        set(favorite_protocol, "TCP")
+        inc(blagga)
+        dec(x)
         print("Got one!")
     goto
         stateWithOnlyTimeout
@@ -37,6 +40,20 @@ define state stateWithOnlyTimeout
         60
     goto
         stateWithTwoArguments "Hello, I am a carrot!" 42
+
+define state lotsOfPrinting theAnswer
+    matching
+        match_string("UDP", "dport", "53")
+    do
+        print(blagga)
+        set(blagga, theAnswer)
+        print(blagga)
+        print(x)
+        dec(x)
+        dec(x)
+        print(x)
+    goto
+        exit
 
 define state stateWithTwoArguments arg1 arg2
     timeout

@@ -30,6 +30,10 @@ class Engine:
         matched, next_function_and_args = self.next_function(packet,
                                                              time_elapsed,
                                                              *self.arguments)
+        if not next_function_and_args:
+            # We are supposed to terminate the debugger.
+            self.next_function = __exit
+            return ["Exit"]
         self.next_function = next_function_and_args[0]
         if len(next_function_and_args) > 1:
             self.arguments = next_function_and_args[1:]
@@ -48,6 +52,11 @@ class Engine:
         implemented by the controller before the DSM starts up.'''
         return __initial_rules
 
+def __exit(packet, time_elapsed=0):
+    '''Signal the end of this debugging session.
+    Arguments are ignored.'''
+    return (False, []) 
+    
 # Side effects:
 
 def __print(msg):
