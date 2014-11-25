@@ -14,12 +14,15 @@ start variables
     dx 5
     blagga -14
 
+    favorite_protocol = "UDP"
+
 start state initialState
 
 # No arguments yet
 define state initialState
     matching
         match_string("UDP", "dport", "53")
+        or match_string(favorite_protocol, "dport", dx)
         or match_string("UDP", "sport", "12")
     compare
         5 < 6

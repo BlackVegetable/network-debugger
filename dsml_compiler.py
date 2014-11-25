@@ -10,6 +10,7 @@ import re
 # Starting state expects: "start variables" or "start filters" or "start state"
 
 GLOBAL_DICT = "__global"
+META_DICT = {}
 
 class StateDefinition:
     def __init__(self, name, argument_list=[]):
@@ -32,13 +33,13 @@ class StateDefinition:
             s += "\n        return (False, [" + self.name
             for arg in self.argument_list:
                 s += ", " + arg
-            s += "], [])"
+            s += "])"
         for clause in self.clauses:
             s += "\n" + str(clause)
         s += "    return (False, [" + self.name
         for arg in self.argument_list:
             s += ", " + arg
-        s += "], [])"
+        s += "])"
         return s
 
     def is_valid(self):
@@ -85,7 +86,7 @@ class Clause:
             else:
                 s += " " + `goto_arg` + ","
         s = s[:-1] # Remove extraneous comma
-        s += "], [])\n"
+        s += "])\n"
         return s
 
     def is_valid(self):
@@ -109,7 +110,6 @@ class Timeout:
         if not self.goto:
             raise Exception("Timeout has no string representation with no goto.")
         s = "    if __time_elapsed >= " + `self.seconds` + ":"
-        # TODO: Add OF Rules return values.
         for effect in self.side_effects:
             s += "\n        " + effect
         s += "\n        return (True, ["
@@ -119,7 +119,7 @@ class Timeout:
             else:
                 s += " " + `goto_arg` + ","
         s = s[:-1] # Remove extraneous comma
-        s += "], [])\n"
+        s += "])\n"
         return s
 
 def main(input_path):
@@ -172,7 +172,6 @@ def start_parse(in_contents, out_file):
 def main_parse(in_contents, start_line_number, out_file, starting_state_name):
     lines_to_skip = 0
     starting_state_found = False
-    out_file.write("\n__initial_state = " + starting_state_name + "\n")
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
         if line.startswith("#") or line == "":
@@ -198,10 +197,15 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
                         raise Exception("Invalid state definition (bad arg '" +
                                         words[i] + "') on line: " + `line_number`)
                     args.append(words[i])
+            for arg in args:
+                if arg in META_DICT:
+                    raise Exception("Argument name '" + arg + "' cannot be used as both global " +
+                                    "variable and as argument name.")
             definition = StateDefinition(state_name, args)
             
             # Parse and add Clauses
-            lines_to_skip, clauses, timeout = parse_clauses(in_contents, line_number + 1, out_file)
+            lines_to_skip, clauses, timeout = parse_clauses(in_contents, line_number + 1,
+                                                            out_file, args)
             for c in clauses:
                 definition.clauses.append(c)
             if timeout:
@@ -213,6 +217,8 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
 
     if not starting_state_found:
         raise Exception("Starting State '" + starting_state_name + "' not found in definitions.")
+
+    out_file.write("\n__initial_state = " + starting_state_name + "\n")
     return
     
 def write_header(out_file):
@@ -223,7 +229,7 @@ def write_header(out_file):
     out_file.write("# DSML file with the same name as this file.\n\n")
     
     out_file.write("import of_side_effect as OF\n\n")
-    
+
     out_file.write("\n__initial_rules = []\n")
  
 def write_global_dict(out_file):
@@ -231,7 +237,8 @@ def write_global_dict(out_file):
     
 def is_valid_identifier(word):
     # Expected variable-name: letter + letter/underscore/number*
-    return re.match("[_A-Za-z][_a-zA-Z0-9]*", word) and not iskeyword(word)
+    return re.match("[_A-Za-z][_a-zA-Z0-9]*", word) \
+           and not iskeyword(word)
     
 def is_valid_value(value):
     # Expected value: number or string
@@ -248,12 +255,25 @@ def is_valid_number(word):
         return False
 
 def is_valid_boolean(word):
-    if word == "True" or word == "true" or word == "TRUE" or \
-       word == "False" or word == "false" or word == "FALSE":
+    if word == "True" or word == "False":
        return True
     return False
 
-def parse_matching_function(s, line_number, conjunction):
+def apply_global_scope(maybe_variable, def_args, line_number):
+    '''Replaces a globally scoped variable with its mangled representation.
+    If the given "maybe_variable" is defined within the definition's arguments
+    instead, it is simply returned unchanged. Will also return any non-variable
+    (non-identifier) unchanged. Will throw an exception if the variable is truly
+    an identifier and is not contained in any valid scope.'''
+    if is_valid_identifier(maybe_variable):
+        if maybe_variable in META_DICT:
+            return GLOBAL_DICT + "['" + maybe_variable + "']"
+        elif not (maybe_variable in def_args):
+            raise Exception("Unknown variable name '" + maybe_variable + "' near " +
+                            "line " + `line_number`)
+    return maybe_variable
+
+def parse_matching_function(s, line_number, conjunction, def_args):
     # Remove conjunctions from the line for now.
     if s.startswith("and"):
         s = s[3:]
@@ -267,33 +287,34 @@ def parse_matching_function(s, line_number, conjunction):
     args = args[:-1] # Get rid of final parenthesis.
     args = args.split(",") # split into arguments.
     args = map(lambda x: x.strip(), args) # strip whitespace from each.
+    
+    # Lookup variables in our global scope and resolve by name.
+    for i in range(len(args)):
+        args[i] = apply_global_scope(args[i], def_args, line_number)
 
     arg_string = ""
-    if fname == "match_string":
-        if len(args) == 4:
-            # Protocol, field_name, val, full_match
-            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
-               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
-               is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
-               is_valid_boolean(args[3]):
-                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
-                              args[2] + ", " + args[3] + ")"
-            else:
-                raise Exception("Invalid arguments for function " + fname +
-                                " on line: " + `line_number`)
-        elif len(args) == 3:
-            # Protocol, field_name, val
-            if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
-               is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
-               is_valid_string(args[2]) or is_valid_identifier(args[2]):
-                arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
-                              args[2] + ")"
-            else:
-                raise Exception("Invalid arguments for function " + fname +
-                                "(" + `args` + ") on line: " + `line_number`)
+    if fname == "match_string" and len(args) == 4:
+        # Protocol, field_name, val, full_match
+        if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+           is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+           is_valid_string(args[2]) or is_valid_identifier(args[2]) and \
+           is_valid_boolean(args[3]):
+            arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
+                          args[2] + ", " + args[3] + ")"
         else:
-            raise Exception("Invalid argument count for function " + fname +
-                            " on line: " + `line_number`)
+            raise Exception("Invalid arguments for function " + fname +
+                            " near line: " + `line_number`)
+
+    elif len(args) == 3 and (fname == "match_string" or fname == "match_regex"):
+        # Protocol, field_name, val
+        if is_valid_string(args[0]) or is_valid_identifier(args[0]) and \
+           is_valid_string(args[1]) or is_valid_identifier(args[1]) and \
+           is_valid_string(args[2]) or is_valid_identifier(args[2]):
+            arg_string += "(packet, " + args[0] + ", " + args[1] + ", " + \
+                          args[2] + ")"
+        else:
+            raise Exception("Invalid arguments for function " + fname +
+                            "(" + `args` + ") near line: " + `line_number`)
         
     elif fname == "match_atleast" or fname == "match_atmost" or fname == "match_exactly":
         if len(args) == 3:
@@ -306,19 +327,19 @@ def parse_matching_function(s, line_number, conjunction):
                               `args[2]` + ")"
             else:
                 raise Exception("Invalid arguments for function " + fname +
-                                " on line: " + `line_number`)
+                                " near line: " + `line_number`)
         else:
             raise Exception("Invalid argument count for function " + fname +
-                            " on line: " + `line_number`)
+                            " near line: " + `line_number`)
     else:
-        raise Exception("Invalid matching function name " + fname + " on line: " +
+        raise Exception("Invalid matching function name " + fname + " near line: " +
                         `line_number`)
 
     if conjunction:
         return conjunction + " " + fname + arg_string
     return fname + arg_string
 
-def parse_matching(in_contents, start_line_number, current_clause):
+def parse_matching(in_contents, start_line_number, current_clause, def_args):
     if start_line_number is len(in_contents):
         raise Exception('matching used not followed by any matching functions on line: ' +
                         `start_line_number - 1`)
@@ -335,7 +356,8 @@ def parse_matching(in_contents, start_line_number, current_clause):
                 conjunction = "and"
             current_clause.matching_functions.append(parse_matching_function(line,
                                                                              line_number,
-                                                                             conjunction))
+                                                                             conjunction,
+                                                                             def_args))
             first_match = False
             lines_processed += 1
         elif line.startswith("or match_"):
@@ -345,7 +367,8 @@ def parse_matching(in_contents, start_line_number, current_clause):
             conjunction = "or"
             current_clause.matching_functions.append(parse_matching_function(line,
                                                                              line_number,
-                                                                             conjunction))
+                                                                             conjunction,
+                                                                             def_args))
             lines_processed += 1
         elif line == "compare" or line == "do" or line == "goto":
             if lines_processed == 0:
@@ -355,7 +378,7 @@ def parse_matching(in_contents, start_line_number, current_clause):
         else:
             raise Exception("Invalid matching line: " + `line_number`)
 
-def parse_timeout(in_contents, start_line_number, timeout):
+def parse_timeout(in_contents, start_line_number, timeout, def_args):
     if start_line_number is len(in_contents):
         raise Exception('timeout used not followed by a duration on line: ' + `start_line_number - 1`)
     lines_to_skip = 0
@@ -375,17 +398,17 @@ def parse_timeout(in_contents, start_line_number, timeout):
             timeout.seconds = int(line, 10)
             lines_processed += 1
         elif line == "goto":
-            lines_to_skip = parse_goto(in_contents, line_number + 1, timeout)
+            lines_to_skip = parse_goto(in_contents, line_number + 1, timeout, def_args)
             lines_processed += lines_to_skip + 1
             break
         elif line == "do":
-            lines_to_skip = parse_side_effects(in_contents, line_number + 1, timeout)
+            lines_to_skip = parse_side_effects(in_contents, line_number + 1, timeout, def_args)
             lines_processed += lines_to_skip + 1
     if not timeout.goto:
         raise Exception('timeout must end with a goto.')
     return lines_processed
 
-def parse_comparisons(in_contents, start_line_number, clause):
+def parse_comparisons(in_contents, start_line_number, clause, def_args):
     if start_line_number is len(in_contents):
         raise Exception('"compare" used not followed by any comparisons on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -407,18 +430,23 @@ def parse_comparisons(in_contents, start_line_number, clause):
             if len(parts) != 3:
                 raise Exception("Invalid number of comparison operators on line " +
                                 `line_number`)
+            parts[0] = apply_global_scope(parts[0], def_args, line_number)
             comparator = parts[1]
+            parts[2] = apply_global_scope(parts[2], def_args, line_number)
         else:
             if len(parts) < 3 or len(parts) > 4:
                 raise Exception("Invalid number of comparison operators on line " +
                                 `line_number`)
             if len(parts) == 3:
+                parts[0] = apply_global_scope(parts[0], def_args, line_number)
                 comparator = parts[1]
+                parts[2] = apply_global_scope(parts[2], def_args, line_number)
             elif len(parts) == 4:
-                comparator = parts[2]
                 conjunction = parts[0]
-
-        # TODO: Resolve global variables here.
+                parts[1] = apply_global_scope(parts[1], def_args, line_number)
+                comparator = parts[2]
+                parts[3] = apply_global_scope(parts[3], def_args, line_number)
+                
         if not (comparator in ["<", "<=", "==", ">=", ">"]):
             raise Exception("Invalid comparator on line " + `line_number`)
         if conjunction and not (conjunction in ["and", "or"]):
@@ -432,13 +460,13 @@ def parse_comparisons(in_contents, start_line_number, clause):
         lines_processed += 1
         first_comparison = False
 
-def parse_side_effects(in_contents, start_line_number, side_effect_container):
+def parse_side_effects(in_contents, start_line_number, side_effect_container, def_args):
     if start_line_number is len(in_contents):
         raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
     side_effect_functions = ["print", "print_packet", "print_stacktrace", "print_of_rules",
                              "print_time", "log", "log_packet", "log_stacktrace", "log_of_rules",
-                             "log_time", "set_to_field_value", "set", "inc", "dec",
-                             "add_of_rule", "remove_of_rule"]
+                             "log_time", "set_to_field_value", "set_to_regex_match", "set", "inc",
+                             "dec", "add_of_rule", "remove_of_rule"]
     lines_processed = 0
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
@@ -462,12 +490,18 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container):
             args = args.split(",") # split into arguments.
             args = map(lambda x: x.strip(), args) # strip whitespace from each.
             # TODO: Validate inputs to all side effect functions? (Low priority)
-        # TODO: Add direct support for inc(), dec() and set().
+        
+        # Only validating that the variable names are in some valid scope.
+        # This will throw an exception if the name is not in scope.
+        # We will need to translate side effect values within __str__.
+        for arg in args:
+            ignored = apply_global_scope(arg, def_args, line_number)
+
         side_effect = "__" + line.strip()
         side_effect_container.side_effects.append(side_effect)
         lines_processed += 1
 
-def parse_goto(in_contents, start_line_number, goto_container):
+def parse_goto(in_contents, start_line_number, goto_container, def_args):
     if start_line_number is len(in_contents):
         raise Exception('"goto" used not followed by a destination on line: ' + `start_line_number - 1`)
     goto = None
@@ -484,10 +518,11 @@ def parse_goto(in_contents, start_line_number, goto_container):
         args = []
         if len(goto) > 0:
             args = goto[1:]
-        for arg in args:
-            # TODO: Verify that argument identifiers are in scope.
-            if not is_valid_identifier(arg) and not is_valid_value(arg):
-                raise Exception("Invalid goto argument '" + arg + "' on line: " +
+        for i in range(len(args)):
+            # This could definitely be more readable... clean up (low priority TODO)
+            goto[i + 1] = apply_global_scope(args[i], def_args, line_number)
+            if not is_valid_identifier(args[i]) and not is_valid_value(args[i]):
+                raise Exception("Invalid goto argument '" + args[i] + "' on line: " +
                                 `line_number`)
         if not goto:
             raise Exception("goto used not followed by a destination on line: " +
@@ -496,7 +531,7 @@ def parse_goto(in_contents, start_line_number, goto_container):
         break
     return 1 # One non-whitespace line is always processed here.
 
-def parse_clauses(in_contents, start_line_number, out_file):
+def parse_clauses(in_contents, start_line_number, out_file, def_args):
     if start_line_number is len(in_contents):
         raise Exception('state definition used not followed by any clauses on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -519,29 +554,29 @@ def parse_clauses(in_contents, start_line_number, out_file):
             break
         if line == "matching":
             current_clause = Clause()
-            lines_to_skip = parse_matching(in_contents, line_number + 1, current_clause)
+            lines_to_skip = parse_matching(in_contents, line_number + 1, current_clause, def_args)
             lines_processed += lines_to_skip + 1
         elif line == "goto":
-            lines_to_skip = parse_goto(in_contents, line_number + 1, current_clause)
+            lines_to_skip = parse_goto(in_contents, line_number + 1, current_clause, def_args)
             clauses.append(current_clause)
             lines_processed += lines_to_skip + 1
         elif line == "do":
-            lines_to_skip = parse_side_effects(in_contents, line_number + 1, current_clause)
+            lines_to_skip = parse_side_effects(in_contents, line_number + 1, current_clause, def_args)
             lines_processed += lines_to_skip + 1
         elif line == "compare":
-            lines_to_skip = parse_comparisons(in_contents, line_number + 1, current_clause)
+            lines_to_skip = parse_comparisons(in_contents, line_number + 1, current_clause, def_args)
             lines_processed += lines_to_skip + 1
         elif line == "timeout":
             if timeout:
                 raise Exception("Multiple timeouts not allowed. Line: " + `line_number`)
             timeout = Timeout()
-            lines_to_skip = parse_timeout(in_contents, line_number + 1, timeout)
+            lines_to_skip = parse_timeout(in_contents, line_number + 1, timeout, def_args)
             lines_processed += lines_to_skip + 1
         else:
             raise Exception('Invalid clause line: ' + `line_number`)
     return (lines_processed, clauses, timeout)
 
-def parse_of_filters(in_contents, start_line_number, out_file):
+def parse_of_filters(in_contents, start_line_number, out_file, def_args):
     if start_line_number is len(in_contents):
         raise Exception('"start filters" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -587,6 +622,9 @@ def parse_globals(in_contents, start_line_number, out_file):
         if not is_valid_value(value):
             raise Exception("Invalid variable definition (bad value) on line: " + `line_number`)
         out_file.write(value)
+        if variable_name in META_DICT:
+            raise Exception("Illegal variable re-definition on line: " + `line_number`)
+        META_DICT[variable_name] = value
         lines_processed += 1
         
     if lines_processed is 0:

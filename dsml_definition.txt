@@ -41,7 +41,7 @@ define state state-name argument-1 argument-2 ...
     
 keywords: "define", "state", "matching", "do", "goto", "timeout", "compare"
 state-name: user-defined string
-argument-x: user-defined string
+argument-x: user-defined string # Must not share a name with a global variable.
 match-func: 
   - match_string(protocol, field_name, value, substring=False)
   - match_atmost(protocol, field_name, value)
@@ -75,6 +75,7 @@ side-effect-func:
   - log_stacktrace(filename)
   - log_of_rules(filename)
   - log_time(filename)
+  # Setting functions cannot create new variables, only overwrite existing variables.
   - set_to_field_value(variable, protocol, field_name)
   - set_to_regex_match(variable, protocol, field_name, regex, sub_index)
   - set(variable, value)

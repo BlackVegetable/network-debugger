@@ -115,6 +115,12 @@ def __set_to_field_value(packet, variable, protocol, field_name):
     '''Set a variable to a value found in a packet.'''
     __global[variable] = get_value(packet, protocol, field_name)
 
+def __set_to_regex_match(packet, variable, protocol, field_name, regular_expression, sub_index):
+    '''Set a variable to the result from a regular expression match (including a
+        sub-match index. Remember, 0 indicates an entire match.)'''
+    __global[variable] = get_regex_value(packet, protocol, field_name,
+                                         regular_expression, sub_index)
+
 def __add_of_rule(src_ip, dst_ip, src_port, dst_port):
     '''Request that an OpenFlow filter be added by the controller.'''
     __pending_of_rules.append(OF.OFSideEffect("add", src_ip, dst_ip, src_port, dst_port))
