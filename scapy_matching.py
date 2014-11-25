@@ -2,6 +2,7 @@
 # Typically importing all is a bad practice, but this is the core library we're
 # going to be using, so I don't feel too terrible about it.
 from scapy.all import *
+import re
 
 def main():   
     # Files from Wireshark will need to be passed to the editcap program.
@@ -42,6 +43,7 @@ def main():
     
     print match_string(pkt, "UDP", "dport", "53")
     print match_string(pkt, "UDP", "payload", "utah.instructure.com", False)
+    print match_regex(pkt, "UDP", "payload", ".*instru(c|j).*")
     print match_atleast(pkt, "IP", "len", 12)
     print match_atmost(pkt, "IP", "len", 900)
     print match_exactly(pkt, "IP", "len", 66)
@@ -53,8 +55,22 @@ def get_value(pkt, protocol, field_name):
     if sub_pkt is None:
         return None
     if not hasattr(sub_pkt, field_name):
-        return None:
+        return None
     return getattr(sub_pkt, field_name)
+
+def match_regex(pkt, protocol, field_name, regex_val):
+    ''' Determines if a packet has a field value that returns a match from the
+    given regular expression string '''
+    sub_pkt = pkt.getlayer(protocol)
+    if sub_pkt is None:
+        # Failed to match protocol.
+        return False
+    if not hasattr(sub_pkt, field_name):
+        # Failed to match field name.
+        return False
+    if re.match(regex_val, `getattr(sub_pkt, field_name)`):
+        return True
+    return False
 
 def match_string(pkt, protocol, field_name, val, full_match=True):
     ''' Determines if a packet has a matching field value.
@@ -69,18 +85,18 @@ def match_string(pkt, protocol, field_name, val, full_match=True):
     '''
     sub_pkt = pkt.getlayer(protocol)
     if sub_pkt is None:
-        #print "Failed to match protocol."
+        # Failed to match protocol.
         return False
     if not hasattr(sub_pkt, field_name):
-        #print "Failed to match field name."
+        # Failed to match field name.
         return False
     if full_match:
         if `getattr(sub_pkt, field_name)` == str(val):
-            #print "Found it (exact)!"
+            # Found it (exact)!
             return True
     else:
         if str(val) in `getattr(sub_pkt, field_name)`:
-            #print "Found it (partial)!"
+            # Found it (partial)!
             return True
     return False
 
@@ -112,10 +128,10 @@ def match_cmp(pkt, protocol, field_name, val, comparator):
     '''
     sub_pkt = pkt.getlayer(protocol)
     if sub_pkt is None:
-        #print "Failed to match protocol."
+        # Failed to match protocol.
         return False
     if not hasattr(sub_pkt, field_name):
-        #print "Failed to match field name."
+        # Failed to match field name.
         return False
     return comparator(getattr(sub_pkt, field_name), val)
 

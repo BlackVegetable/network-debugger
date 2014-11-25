@@ -47,6 +47,7 @@ match-func:
   - match_atmost(protocol, field_name, value)
   - match_atleast(protocol, field_name, value)
   - match_exactly(protocol, field_name, value)
+  - match_regex(protocol, field_name, regular_expression)
 conjunction:
   - and
   - or
@@ -60,6 +61,8 @@ value-x:
   - string literal # == only
   - integer
   - variable-name
+regular_expression:
+  - Python regex string
 seconds: integer > 0
 side-effect-func:
   - print(text)
