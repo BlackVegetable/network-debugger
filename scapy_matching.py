@@ -47,6 +47,7 @@ def main():
     print match_atleast(pkt, "IP", "len", 12)
     print match_atmost(pkt, "IP", "len", 900)
     print match_exactly(pkt, "IP", "len", 66)
+    print get_regex_value(pkt, "UDP", "payload", r"(.*)ins(.*?)e\.com", 2)
 
 def get_value(pkt, protocol, field_name):
     ''' returns the value of the field with the given name in the given packet
@@ -57,6 +58,22 @@ def get_value(pkt, protocol, field_name):
     if not hasattr(sub_pkt, field_name):
         return None
     return getattr(sub_pkt, field_name)
+
+def get_regex_value(pkt, protocol, field_name, regex_val, match_index):
+    ''' Returns the value matched by the given fields and regex submatch
+    indexed by 'match_index'. Remember, a match_index of 0 is an entire
+    match. '''
+    sub_pkt = pkt.getlayer(protocol)
+    if sub_pkt is None:
+        # Failed to match protocol.
+        return None
+    if not hasattr(sub_pkt, field_name):
+        # Failed to match field name.
+        return None
+    m = re.match(regex_val, `getattr(sub_pkt, field_name)`)
+    if m:
+        return m.group(match_index)
+    return None
 
 def match_regex(pkt, protocol, field_name, regex_val):
     ''' Determines if a packet has a field value that returns a match from the

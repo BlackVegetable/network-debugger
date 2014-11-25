@@ -76,6 +76,7 @@ side-effect-func:
   - log_of_rules(filename)
   - log_time(filename)
   - set_to_field_value(variable, protocol, field_name)
+  - set_to_regex_match(variable, protocol, field_name, regex, sub_index)
   - set(variable, value)
   - inc(variable)
   - dec(variable)
