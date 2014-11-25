@@ -18,7 +18,7 @@ class OFSideEffect:
                 self.source_port == other.source_port and
                 self.destination_port == other.destination_port and
                 ((self.command == "add" and other.command == "remove") or
-                 (self.command == "remove" and other.command == "add"))
+                 (self.command == "remove" and other.command == "add")))
 
     def opposite(self):
         if self.command == "add":
