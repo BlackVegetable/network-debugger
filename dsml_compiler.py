@@ -504,9 +504,12 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
         if len(arg_string) > 1:
             arg_string = arg_string[:-1] + ")" # Replace final comma.
 
-        if fname == "print_stacktrace" or fname == "log_stacktrace":
-            # Needed to transmit stacktrace information.
+        # Needed to transmit stacktrace information via self
+        if fname == "print_stacktrace":
             arg_string = "(self)" 
+        elif fname == "log_stacktrace":
+            # (filename) --> (self, filename)
+            arg_string = "(self, " + arg_string[1:]
 
         side_effect = fname + "00" + arg_string
         side_effect_container.side_effects.append(side_effect)
