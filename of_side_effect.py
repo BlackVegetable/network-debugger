@@ -24,7 +24,7 @@ class OFSideEffect:
         if self.command == "add":
             return OFSideEffect("remove", self.source_ip, self.destination_ip,
                                 self.source_port, self.destination_port)
-        return OFSideEffect("add", self.source_ip, self.destionation_ip,
+        return OFSideEffect("add", self.source_ip, self.destination_ip,
                             self.source_port, self.destination_port)
 
     def __str__(self):
@@ -38,3 +38,9 @@ class OFSideEffect:
         if self.destination_port:
             s += " destination port = " + str(self.destination_port)
         return s
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))

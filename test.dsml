@@ -39,6 +39,10 @@ define state initialState
         print(blagga)
         dec(x)
         print("Got one!")
+        print("Starting rules within initialState")
+        print_of_rules()
+        remove_of_rule(None, "10.0.0.1", None, None)
+        add_of_rule(None, None, "11122", None)
     goto
         stateWithOnlyTimeout
     matching
@@ -55,13 +59,16 @@ define state initialState
 define state stateWithOnlyTimeout
     timeout
         60
+    do
+        print("Current rules within stateWithOnlyTimeout:")
+        print_of_rules()
     goto
         stateWithTwoArguments "Hello, I am a carrot!" 42
 
 define state lotsOfPrinting theAnswer
     matching
         match_string("UDP", "dport", "53")
-        or match_regex("UDP", "payload", "structure")
+        or match_regex("UDP", "payload", ".*structure.*")
     do
         print(blagga)
         set(blagga, theAnswer)

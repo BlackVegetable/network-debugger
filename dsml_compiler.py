@@ -142,7 +142,7 @@ def main(input_path):
 
 def start_parse(in_contents, out_file):
     write_header(out_file)
-    write_global_dict(out_file)
+    write_global_state(out_file)
     lines_to_skip = 0
     for line_number in range(len(in_contents)):
         line = in_contents[line_number]
@@ -232,8 +232,9 @@ def write_header(out_file):
     out_file.write("from datetime import datetime\n")
     out_file.write("from scapy_matching import *\n\n")
  
-def write_global_dict(out_file):
-    out_file.write("\n" + GLOBAL_DICT + " = {}") 
+def write_global_state(out_file):
+    out_file.write("\n" + GLOBAL_DICT + " = {}")
+    out_file.write("\npending_of_rules00 = []")
     
 def is_valid_identifier(word):
     # Expected variable-name: letter + letter/underscore/number*
@@ -271,7 +272,7 @@ def apply_global_scope(maybe_variable, def_args, line_number, name_wanted=False)
                 return "'" + maybe_variable + "'"
             else:
                 return GLOBAL_DICT + "['" + maybe_variable + "']"
-        elif not (maybe_variable in def_args):
+        elif not (maybe_variable in def_args or maybe_variable == "None"):
             raise Exception("Unknown variable name '" + maybe_variable + "' near " +
                             "line " + `line_number`)
     return maybe_variable
@@ -493,7 +494,7 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
             args = args.split(",") # split into arguments.
             args = map(lambda x: x.strip(), args) # strip whitespace from each.
             # TODO: Validate inputs to all side effect functions? (Low priority)
-        
+
         name_wanted = False
         if fname in ["set", "dec", "inc", "set_to_field_value", "set_to_regex_match"]:
             name_wanted = True    
@@ -504,10 +505,10 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
         if len(arg_string) > 1:
             arg_string = arg_string[:-1] + ")" # Replace final comma.
 
-        # Needed to transmit stacktrace information via self
-        if fname == "print_stacktrace":
+        # Needed to transmit stacktrace information, OF rule status via self
+        if fname == "print_stacktrace" or fname == "print_of_rules":
             arg_string = "(self)" 
-        elif fname == "log_stacktrace":
+        elif fname == "log_stacktrace" or fname == "log_of_rules":
             # (filename) --> (self, filename)
             arg_string = "(self, " + arg_string[1:]
 

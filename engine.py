@@ -24,12 +24,18 @@ class Engine:
         or with None for the packet and a positive integer for
         time_elapsed. It is an error to call it with anything else.
         '''
-        pending_of_rules00 = [] # Clear the list.
+        pending_of_rules00[:] = [] # Clear the list.
+        if packet is None:
+            self.stacktrace.append([self.next_function.__name__, "Timeout"])
+        else:
+            self.stacktrace.append([self.next_function.__name__, packet])
         previous_function = self.next_function # Store for stacktrace
         matched, next_function_and_args = self.next_function(self,
                                                              packet,
                                                              time_elapsed,
                                                              *self.arguments)
+        if not matched:
+            self.stacktrace.pop() # Last frame is not part of stacktrace after all.
         if not next_function_and_args:
             # We are supposed to terminate the debugger.
             self.next_function = exit00
@@ -38,14 +44,12 @@ class Engine:
         if len(next_function_and_args) > 1:
             self.arguments = next_function_and_args[1:]
         else:
-            self.arguments = [] 
-        if matched:
-            if packet is None:
-                packet = "Timeout"
-            self.stacktrace.append([previous_function.__name__, packet])
+            self.arguments = []
 
         self.combine_of_rules(pending_of_rules00)
-        return [matched].extend(pending_of_rules00) # Mutated within DSML script
+        return_list = [matched]
+        return_list.extend(pending_of_rules00) # Mutated within DSML script
+        return return_list
         
     def get_initial_rules(self):
         '''Simply returns a list of OFSideEffects that need to be 
@@ -80,9 +84,9 @@ def print_stacktrace00(stack_object):
     for i in range(len(stacktrace)):
         print "frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]`
 
-def print_of_rules00(self):
+def print_of_rules00(rule_object):
     '''Prints the Open Flow filters currently applied to the controller/switch.'''
-    for rule in self.current_of_rules:
+    for rule in rule_object.current_of_rules:
         print str(rule)
 
 def log00(filename, msg):
@@ -107,10 +111,10 @@ def log_stacktrace00(stack_object, filename):
         for i in range(len(stacktrace)):
             logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]`)
 
-def log_of_rules00(self, filename):
+def log_of_rules00(rule_object, filename):
     '''Logs the Open Flow filters currently applied to the controller/switch to a given file.'''
     with open(filename, "a") as logfile:
-        for rule in self.current_of_rules:
+        for rule in rule_object.current_of_rules:
             logfile.write(str(rule))
 
 def inc00(variable):
