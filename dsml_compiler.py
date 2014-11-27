@@ -231,8 +231,6 @@ def write_header(out_file):
     out_file.write("import of_side_effect as OF\n")
     out_file.write("from datetime import datetime\n")
     out_file.write("from scapy_matching import *\n\n")
-
-    out_file.write("\ninitial_rules00 = []\n")
  
 def write_global_dict(out_file):
     out_file.write("\n" + GLOBAL_DICT + " = {}") 
@@ -589,22 +587,35 @@ def parse_clauses(in_contents, start_line_number, out_file, def_args):
             raise Exception('Invalid clause line: ' + `line_number`)
     return (lines_processed, clauses, timeout)
 
-def parse_of_filters(in_contents, start_line_number, out_file, def_args):
+def parse_of_filters(in_contents, start_line_number, out_file):
     if start_line_number is len(in_contents):
         raise Exception('"start filters" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
     lines_processed = 0
+    initial_rules = []
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
         if line.startswith("#") or line == "":
             # Comment or whitespace only.
             continue
-        if line == "start variables" or line == "start state":
+        if line == "start variables" or line.startswith("start state"):
             break
-        # TODO: Parse OF Filters.
-        lines_processed += 1
+        
+        if line.startswith("of_filter"):
+            no_parens = line.replace("(", " ").replace(")", "").replace(",", " ").split()
+            args = no_parens[1:]
+            if len(args) != 4:
+                raise Exception("Incorrect number of arguments to of_filter near line: " +
+                                `line_number`)
+            initial_rules.append('OF.OFSideEffect("add", ' + args[0] + ", " + args[1] +
+                                 ", " + args[2] + ", " + args[3] + ")")
+            lines_processed += 1
+            continue
+        else:
+            raise Exception("Invalid syntax near line: " + `line_number`)
     
     if lines_processed is 0:
         raise Exception('"start filters" used not followed by filters on line: ' + `start_line_number - 1`)    
+    out_file.write("\ninitial_rules00 = " + `initial_rules` + "\n")
     return lines_processed    
     
 def parse_globals(in_contents, start_line_number, out_file):
@@ -616,7 +627,7 @@ def parse_globals(in_contents, start_line_number, out_file):
         if line.startswith("#") or line.isspace() or not line:
             # Comment or whitespace only.
             continue
-        if line is "start filters" or line.startswith("start state"):
+        if line == "start filters" or line.startswith("start state"):
             break
             
         # Expected Syntax: variable-name starting-value

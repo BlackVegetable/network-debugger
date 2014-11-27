@@ -1,5 +1,7 @@
 Syntax Examples:
 
+Note: All strings should use double-quotes.
+
 ***************************************************
 
 # Comment
@@ -7,11 +9,11 @@ start variables
     variable-name starting-value
     [...]
 start filters
-    add_of_rule(arguments)
+    of_filter(src_ip, dst_ip, src_port, dst_port) # Use None for wildcard in a field
     [...]
 start state state-name
 
-keywords: "define", "variables", "start", "state", "filters"
+keywords: "define", "variables", "start", "state", "filters", "of_filter"
 variable-name: user-defined string
 starting-value:
   - string

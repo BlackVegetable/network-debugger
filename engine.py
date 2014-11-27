@@ -2,10 +2,10 @@
 
 class Engine:    
     def __init__(self):
-        self.stacktrace = [] # stacktrace list creation
-        self.arguments = []    
+        self.stacktrace = []
+        self.arguments = []
         self.next_function = initial_state00
-        self.current_of_rules = set(initial_rules00)
+        self.current_of_rules = set(self.get_initial_rules())
 
     def combine_of_rules(self, of_rules_list):
         '''Combines a list of OF rules into an existing set.
@@ -25,6 +25,7 @@ class Engine:
         time_elapsed. It is an error to call it with anything else.
         '''
         pending_of_rules00 = [] # Clear the list.
+        previous_function = self.next_function # Store for stacktrace
         matched, next_function_and_args = self.next_function(self,
                                                              packet,
                                                              time_elapsed,
@@ -41,7 +42,7 @@ class Engine:
         if matched:
             if packet is None:
                 packet = "Timeout"
-            self.stacktrace.append([self.next_function.__name__, packet])
+            self.stacktrace.append([previous_function.__name__, packet])
 
         self.combine_of_rules(pending_of_rules00)
         return [matched].extend(pending_of_rules00) # Mutated within DSML script
@@ -49,7 +50,10 @@ class Engine:
     def get_initial_rules(self):
         '''Simply returns a list of OFSideEffects that need to be 
         implemented by the controller before the DSM starts up.'''
-        return initial_rules00
+        rule_list = []
+        for rule in initial_rules00:
+            rule_list.append(eval(rule))
+        return rule_list
 
 def exit00(self, packet, time_elapsed=0):
     '''Signal the end of this debugging session.

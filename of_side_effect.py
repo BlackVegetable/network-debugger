@@ -22,10 +22,10 @@ class OFSideEffect:
 
     def opposite(self):
         if self.command == "add":
-            return OFSideEffect("remove", self.src_ip, self.dst_ip,
-                                self.src_port, self.dst_port)
-        return OFSideEffect("add", self.src_ip, self.dst_ip,
-                            self.src_port, self.dst_port)
+            return OFSideEffect("remove", self.source_ip, self.destination_ip,
+                                self.source_port, self.destination_port)
+        return OFSideEffect("add", self.source_ip, self.destionation_ip,
+                            self.source_port, self.destination_port)
 
     def __str__(self):
         s = self.command + ":"

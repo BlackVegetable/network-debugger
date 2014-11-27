@@ -16,6 +16,10 @@ start variables
 
     favorite_protocol = "UDP"
 
+start filters
+    of_filter("127.0.0.1", None, "53", None)
+    of_filter(None, "10.0.0.1", None, None)
+
 start state initialState
 
 # No arguments yet
