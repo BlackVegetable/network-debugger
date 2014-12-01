@@ -22,5 +22,6 @@ def add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1):
     msg.match.nw_proto = nw_proto
     msg.actions = []
     msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
-
+    msg.actions.append(of.ofp_action_output(port = 6633))
+    
     connection.send(msg)

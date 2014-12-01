@@ -5,45 +5,70 @@ import pox.openflow.libopenflow_01 as of
 import pox.lib.packet as pkt
 from pox.lib.addresses import IPAddr
 import pox.misc.arp_responder as arp_responder
-#from engine import *
-import time
+
 from pox.entry_operation import *
+
+
+import thread
+from dsml_sniffer import *
+
+from scapy.all import *
+
+import test_dsm as dsm
+
+import time
 log = core.getLogger()
 
-class delete_controller (object):
+class dsml_controller (object):
+
     def __init__ (self, connection):
         self.connection = connection
-
         self.connection.addListeners(self)
-        
+        #clear all previous rules
         core.openflow.clear_flows_of_connect = 1
         
-        #add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
-        add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=1)
-        add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=6)
-        add_entry(self.connection, nw_dst="10.1.1.5", nw_src="10.1.1.2", nw_proto=1)
-        add_entry(self.connection, nw_dst="10.1.1.5", nw_src="10.1.1.2", nw_proto=6)
+        self.engine = dsm.Engine()
+        starting_of_rules = self.engine.get_initial_rules()
+        print starting_of_rules[0]
+        print starting_of_rules[1]
+        for i in xrange(0,len(starting_of_rules),2):     
+            if starting_of_rules[i].command == "add":
+                #add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
+                add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
+                add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
+            else:
+                #delete_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
+                delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
+                delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
         
-        #raw_input("\n\nPress enter key to exit.")
-        time.sleep(5)
+        """This is the test part rules:"""
+        add_entry(self.connection, nw_dst="127.0.0.1", nw_src="10.1.1.5", nw_proto=1)
+        add_entry(self.connection, nw_dst="127.0.0.1", nw_src="10.1.1.5", nw_proto=6)
         
-        delete_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=1)
-        delete_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=6)
-
-        
-    # Handles packet in messages from the switch.
-    def _handle_PacketIn (self, event):
-        packet = event.parsed
-        
-        print "incoming packets"
-        
-        
-        
-        
+        try:
+            thread.start_new_thread( self.start_sniffer, ("127.0.0.1", 1337, "tcp",) )
+        except Exception as e:
+            print type(e).__name__
+            print "Error: unable to start sniffer"
+    
+    def start_sniffer(self, IP, port, protocol):
+        sniffer = Dsml_sniffer(self)
+        print sniffer.start_sniffing(IP, port, protocol)
+    # sniff and change rules of switch
+    #def rules_changing (self, connection):
+    #    print "test if we can go to this stage"
+    #    rule = []
+    #    a = sniff(filter="tcp and (port 1337)",count =1)
+    #    print a
+    #    while (a)!=0:
+    #        print a
+    #        rule = self.engine.handle_packet(a)
+    #        print rule
+    #        a = sniff(filter="tcp and (port 1337)",count =1)
 def launch ():
     arp_responder.launch(no_learn = True)
     def start_switch (event):
-        delete_controller(event.connection)
+        dsml_controller(event.connection)
         
 
     core.openflow.addListenerByName("ConnectionUp", start_switch)
