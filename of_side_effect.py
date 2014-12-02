@@ -13,6 +13,8 @@ class OFSideEffect:
         self.command = command
 
     def is_opposite(self, other):
+        '''Returns True if the "other" object is the semantic opposite
+        rule to this "self" object.'''
         return (self.source_ip == other.source_ip and
                 self.destination_ip == other.destination_ip and
                 self.source_port == other.source_port and
@@ -21,6 +23,8 @@ class OFSideEffect:
                  (self.command == "remove" and other.command == "add")))
 
     def opposite(self):
+        '''Returns an OFSideEffect that is the semantic opposite of
+        this "self" OFSideEffect.'''
         if self.command == "add":
             return OFSideEffect("remove", self.source_ip, self.destination_ip,
                                 self.source_port, self.destination_port)
