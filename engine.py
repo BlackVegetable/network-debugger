@@ -92,30 +92,30 @@ def print_of_rules00(rule_object):
 def log00(filename, msg):
     '''Log a given message to a given file.'''
     with open(filename, "a") as logfile:
-        logfile.write(msg)
+        logfile.write(str(msg) + "\n")
 
 def log_packet00(filename, packet):
     '''Log the current packet's contents to a given file.'''
     with open(filename, "a") as logfile:
-        logfile.write(`packet`)
+        logfile.write(`packet` + "\n")
 
 def log_time00(filename):
     '''Log the current timestamp to a given file.'''
     with open(filename, "a") as logfile:
-        logfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        logfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + "\n")
 
 def log_stacktrace00(stack_object, filename):
     '''Log a network 'stacktrace' to a given file.'''
     stacktrace = stack_object.stacktrace
     with open(filename, "a") as logfile:
         for i in range(len(stacktrace)):
-            logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]`)
+            logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]` + "\n")
 
 def log_of_rules00(rule_object, filename):
     '''Logs the Open Flow filters currently applied to the controller/switch to a given file.'''
     with open(filename, "a") as logfile:
         for rule in rule_object.current_of_rules:
-            logfile.write(str(rule))
+            logfile.write(str(rule) + "\n")
 
 def inc00(variable):
     '''Increment a variable'''

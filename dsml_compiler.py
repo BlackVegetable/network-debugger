@@ -532,6 +532,13 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
         elif fname == "log_stacktrace" or fname == "log_of_rules":
             # (filename) --> (self, filename)
             arg_string = "(self, " + arg_string[1:]
+        # Need to transmit packet information.
+        elif fname == "print_packet":
+            arg_string = "(packet)"
+        elif fname == "log_packet":
+            arg_string = arg_string[:-1] + ", packet)"
+        elif fname == "set_to_field_value" or fname == "set_to_regex_match":
+            arg_string = "(packet, " + arg_string[1:]
 
         side_effect = fname + "00" + arg_string
         side_effect_container.side_effects.append(side_effect)
@@ -662,8 +669,17 @@ def parse_globals(in_contents, start_line_number, out_file):
             break
             
         # Expected Syntax: variable-name starting-value
-        #              OR: variable-name = starting-value        
-        words = line.split()
+        #              OR: variable-name = starting-value
+        q_words = line.split('"')
+        words = []
+        if len(q_words) == 1:
+            #no quotes present
+            words = line.split()
+        else:
+            #Assume two quotes present, better to clean up, but (low priority)
+            words = "".join(q_words[:-2]).split()
+            words.append('"' + q_words[-2] + '"')
+
         if len(words) is 3 and words[1] == "=":
             words = [words[0], words[2]]
         if len(words) != 2:
