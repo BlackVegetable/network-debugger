@@ -141,6 +141,9 @@ def main(input_path):
                 os.remove(output_path)
 
 def start_parse(in_contents, out_file):
+    '''Parses and writes the header (imports etc.) as well as the information that must occur
+    before the states/transitions are defined such as the global variables and the initial
+    OpenFlow filters.''' 
     write_header(out_file)
     write_global_state(out_file)
     lines_to_skip = 0
@@ -170,6 +173,7 @@ def start_parse(in_contents, out_file):
             return
 
 def main_parse(in_contents, start_line_number, out_file, starting_state_name):
+    '''High-level parsing function to handle the state Definitions.'''
     lines_to_skip = 0
     starting_state_found = False
     for line_number in range(start_line_number, len(in_contents)):
@@ -222,7 +226,8 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
     return
     
 def write_header(out_file):
-    # TODO: Check if os is linux? (Low priority)
+    '''Writes the imports and leading comments that explain that this is
+    a machine-generated file and probably shouldn't be edited by hand.'''
     out_file.write("#!/usr/bin/python\n\n")
     out_file.write("# This program is machine generated and should not\n")
     out_file.write("# be altered by hand. To make changes, alter the\n")
@@ -233,22 +238,28 @@ def write_header(out_file):
     out_file.write("from scapy_matching import *\n\n")
  
 def write_global_state(out_file):
+    '''Writes the global variables required to be defined before the
+    state functions.'''
     out_file.write("\n" + GLOBAL_DICT + " = {}")
     out_file.write("\npending_of_rules00 = []")
     
 def is_valid_identifier(word):
+    '''Returns True if this is a valid python identifier.'''
     # Expected variable-name: letter + letter/underscore/number*
     return re.match("^[_A-Za-z][\[\]_a-zA-Z0-9]*$", word) \
            and not iskeyword(word)
     
 def is_valid_value(value):
+    '''Returns True if this is a number or a double-quoted string.'''
     # Expected value: number or string
     return re.match("^(\".*\")|(-?\d+)$", value)
     
 def is_valid_string(word):
+    '''Returns True if this is a single or double-quoted string.'''
     return re.match("^'.*'$", word) or re.match('^".*"$', word) 
 
 def is_valid_number(word):
+    '''Returns True if this is a base-10 integer.'''
     try:
         num = int(word, 10)
         return True
@@ -256,6 +267,7 @@ def is_valid_number(word):
         return False
 
 def is_valid_boolean(word):
+    '''Returns true if this is a boolean-looking string.'''
     if word == "True" or word == "False":
        return True
     return False
@@ -278,6 +290,8 @@ def apply_global_scope(maybe_variable, def_args, line_number, name_wanted=False)
     return maybe_variable
 
 def parse_matching_function(s, line_number, conjunction, def_args):
+    '''Parses a matching function but presently does not validate
+    its inputs.'''
     # Remove conjunctions from the line for now.
     if s.startswith("and"):
         s = s[3:]
@@ -344,6 +358,8 @@ def parse_matching_function(s, line_number, conjunction, def_args):
     return fname + arg_string
 
 def parse_matching(in_contents, start_line_number, current_clause, def_args):
+    '''Parses a matching section of a Clause which must include one or more
+    matching functions.'''
     if start_line_number is len(in_contents):
         raise Exception('matching used not followed by any matching functions on line: ' +
                         `start_line_number - 1`)
@@ -383,6 +399,7 @@ def parse_matching(in_contents, start_line_number, current_clause, def_args):
             raise Exception("Invalid matching line: " + `line_number`)
 
 def parse_timeout(in_contents, start_line_number, timeout, def_args):
+    '''High-level function to parse a Timeout object.'''
     if start_line_number is len(in_contents):
         raise Exception('timeout used not followed by a duration on line: ' + `start_line_number - 1`)
     lines_to_skip = 0
@@ -413,6 +430,8 @@ def parse_timeout(in_contents, start_line_number, timeout, def_args):
     return lines_processed
 
 def parse_comparisons(in_contents, start_line_number, clause, def_args):
+    '''Parses a comparison section of a Clause, which must include one or
+    more binary comparisons.'''
     if start_line_number is len(in_contents):
         raise Exception('"compare" used not followed by any comparisons on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -465,6 +484,8 @@ def parse_comparisons(in_contents, start_line_number, clause, def_args):
         first_comparison = False
 
 def parse_side_effects(in_contents, start_line_number, side_effect_container, def_args):
+    '''Parses side-effect functions found in a 'do' section of a Clause.
+    In general, the arguments are not validated.'''
     if start_line_number is len(in_contents):
         raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
     side_effect_functions = ["print", "print_packet", "print_stacktrace", "print_of_rules",
@@ -517,6 +538,8 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
         lines_processed += 1
 
 def parse_goto(in_contents, start_line_number, goto_container, def_args):
+    '''Parses the goto section of a Clause which must be followed by a
+    single state and optionally one or more arguments to that state.'''
     if start_line_number is len(in_contents):
         raise Exception('"goto" used not followed by a destination on line: ' + `start_line_number - 1`)
     goto = None
@@ -547,6 +570,8 @@ def parse_goto(in_contents, start_line_number, goto_container, def_args):
     return 1 # One non-whitespace line is always processed here.
 
 def parse_clauses(in_contents, start_line_number, out_file, def_args):
+    '''High-level function to parse one or more Clauses within a
+    StateDefinition.'''
     if start_line_number is len(in_contents):
         raise Exception('state definition used not followed by any clauses on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -592,6 +617,7 @@ def parse_clauses(in_contents, start_line_number, out_file, def_args):
     return (lines_processed, clauses, timeout)
 
 def parse_of_filters(in_contents, start_line_number, out_file):
+    '''Parses the initial open_flow filters for this DSM.'''
     if start_line_number is len(in_contents):
         raise Exception('"start filters" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
     lines_processed = 0
@@ -623,6 +649,7 @@ def parse_of_filters(in_contents, start_line_number, out_file):
     return lines_processed    
     
 def parse_globals(in_contents, start_line_number, out_file):
+    '''Parses the global variables found at the start of this DSML script.'''
     if start_line_number is len(in_contents):
         raise Exception('"start variables" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
     lines_processed = 0
