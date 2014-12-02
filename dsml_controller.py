@@ -31,29 +31,54 @@ class dsml_controller (object):
         starting_of_rules = self.engine.get_initial_rules()
         print starting_of_rules[0]
         print starting_of_rules[1]
-        for i in xrange(0,len(starting_of_rules),2):     
-            if starting_of_rules[i].command == "add":
-                #add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
-                add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
-                add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
-            else:
-                #delete_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
-                delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
-                delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
+        for item in starting_of_rules:
+            if item.command == "add":
+                if item.destination_port != None:
+                    tp_dst = int(item.destination_port)
+                else:
+                    tp_dst = None
+                if item.source_port != None:
+                    tp_src = int(item.source_port)
+                else:
+                    tp_src = None
+                add_sniff(self.connection, nw_dst=item.destination_ip, nw_src=item.source_ip, tp_dst=tp_dst, tp_src=tp_src)
+        #for i in xrange(len(starting_of_rules)):     
+        #    if starting_of_rules[i].command == "add":
+        #        #add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
+        #        add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
+        #        add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
+        #    else:
+        #        #delete_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
+        #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
+        #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
         
         """This is the test part rules:"""
-        add_entry(self.connection, nw_dst="127.0.0.1", nw_src="10.1.1.5", nw_proto=1)
-        add_entry(self.connection, nw_dst="127.0.0.1", nw_src="10.1.1.5", nw_proto=6)
+        #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=1)
+        #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=6)
         
-        try:
-            thread.start_new_thread( self.start_sniffer, ("127.0.0.1", 1337, "tcp",) )
-        except Exception as e:
-            print type(e).__name__
-            print "Error: unable to start sniffer"
+        self.start_sniffer ("127.0.0.1", "1337", "tcp")
+        #try:
+        #    thread.start_new_thread( self.start_sniffer, ("127.0.0.1", "1337", "tcp",) )
+        #except Exception as e:
+        #    print type(e).__name__
+        #    print "Error: unable to start sniffer"
     
     def start_sniffer(self, IP, port, protocol):
         sniffer = Dsml_sniffer(self)
-        print sniffer.start_sniffing(IP, port, protocol)
+        sniffer.start_sniffing(IP, port, protocol)
+    def write_entry(self, rules):
+        for item in rules:
+            if item.command == "add":
+                if item.destination_port != None:
+                    tp_dst = int(item.destination_port)
+                else:
+                    tp_dst = None
+                if item.source_port != None:
+                    tp_src = int(item.source_port)
+                else:
+                    tp_src = None
+                add_sniff(self.connection, nw_dst=item.destination_ip, nw_src=item.source_ip, tp_dst=tp_dst, tp_src=tp_src)
+    
     # sniff and change rules of switch
     #def rules_changing (self, connection):
     #    print "test if we can go to this stage"
