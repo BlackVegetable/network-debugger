@@ -68,12 +68,12 @@ regular_expression:
 seconds: integer > 0
 side-effect-func:
   - print(text)
-  - print_dump()
+  - print_packet()
   - print_stacktrace()
   - print_of_rules()
   - print_time()
   - log(filename, text)
-  - log_dump(filename)
+  - log_packet(filename)
   - log_stacktrace(filename)
   - log_of_rules(filename)
   - log_time(filename)
