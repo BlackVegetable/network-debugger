@@ -11,7 +11,6 @@ def delete_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1):
     msg.match.dl_type = dl_type
     msg.match.nw_proto = nw_proto
     msg.command =of.OFPFC_DELETE
-    #print msg
     connection.send(msg)
     
 def add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1):
@@ -26,230 +25,65 @@ def add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1):
     
     connection.send(msg)
 
-def add_sniff(connection, nw_dst):
+def add_sniff(connection, nw_dst=None, nw_src=None, tp_dst=None, tp_src=None):
     msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst     
+    if not (nw_dst is None):
+        msg.match.nw_dst = nw_dst
+    if not (nw_src is None):
+        msg.match.nw_src = nw_src
+    #if not (tp_dst is None):
+        #msg.match.tp_dst = tp_dst
+    #if not (tp_src is None):
+        #msg.match.tp_src = tp_src
     msg.match.dl_type = 0x800
     msg.match.nw_proto = 1
     msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
+    msg.actions.append(of.ofp_action_nw_addr.set_dst(IPAddr("127.0.0.1")))
+    msg.actions.append(of.ofp_action_tp_port.set_dst(1337))
     connection.send(msg)
     
     msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst     
+    if not (nw_dst is None):
+        msg.match.nw_dst = nw_dst
+    if not (nw_src is None):
+        msg.match.nw_src = nw_src
+    if not (tp_dst is None):
+        msg.match.tp_dst = tp_dst
+    if not (tp_src is None):
+        msg.match.tp_src = tp_src  
     msg.match.dl_type = 0x800
     msg.match.nw_proto = 6
     msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
+    msg.actions.append(of.ofp_action_nw_addr.set_dst(IPAddr("127.0.0.1")))
+    msg.actions.append(of.ofp_action_tp_port.set_dst(1337))
     connection.send(msg)
     
-def add_sniff(connection, nw_src):
+def delete_sniff(connection, nw_dst=None, nw_src=None, tp_dst=None, tp_src=None):    
     msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
+    if not (nw_dst is None):
+        msg.match.nw_dst = nw_dst
+    if not (nw_src is None):
+        msg.match.nw_src = nw_src
+    if not (tp_dst is None):
+        msg.match.tp_dst = tp_dst
+    if not (tp_src is None):
+        msg.match.tp_src = tp_src  
+    #msg.match.dl_type = 0x800
+    #msg.match.nw_proto = 1
+    msg.command =of.OFPFC_DELETE
     connection.send(msg)
     
-    msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, tp_dst):
-    msg = of.ofp_flow_mod()
-    #msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
+    #msg = of.ofp_flow_mod()
+    #if not (nw_dst is None):
+    #    msg.match.nw_dst = nw_dst
+    #if not (nw_src is None):
+    #    msg.match.nw_src = nw_src
+    #if not (tp_dst is None):
+    #    msg.match.tp_dst = tp_dst
+    #if not (tp_src is None):
+    #    msg.match.tp_src = tp_src  
+    #msg.match.dl_type = 0x800
+    #msg.match.nw_proto = 6
+    #msg.command =of.OFPFC_DELETE
+    #connection.send(msg)
     
-    msg = of.ofp_flow_mod()
-    msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, tp_src):
-    msg = of.ofp_flow_mod()
-    #msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_dst, nw_src):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-def add_sniff(connection, nw_dst, tp_dst):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    #msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_dst, tp_src):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    #msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_src, tp_dst):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src
-    #msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src
-    msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_src, tp_src):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src
-    #msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_src = nw_src
-    msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_dst, nw_src, tp_dst):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    #msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    msg.match.tp_dst = tp_dst     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_dst, nw_src, tp_src):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    #msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
-def add_sniff(connection, nw_dst, nw_src, tp_dst, tp_src):
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    #msg.match.tp_dst = tp_dst
-    #msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 1
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-    
-    msg = of.ofp_flow_mod()
-    msg.match.nw_dst = nw_dst
-    msg.match.nw_src = nw_src
-    msg.match.tp_dst = tp_dst
-    msg.match.tp_src = tp_src     
-    msg.match.dl_type = 0x800
-    msg.match.nw_proto = 6
-    msg.actions = []
-    msg.actions.append(of.ofp_action_output(port = 1337))
-    connection.send(msg)
-
