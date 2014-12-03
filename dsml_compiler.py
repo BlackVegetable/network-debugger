@@ -165,10 +165,10 @@ def start_parse(in_contents, out_file):
             # TODO: Allow for starting state arguments (Low priority)
             words = line.split()
             if len(words) < 3:
-                raise Exception('"start state" used not followed by a state name on line: ' + line_number)
+                raise Exception('"start state" used not followed by a state name near line: ' + line_number)
             starting_state_name = words[2]
             if not is_valid_identifier(starting_state_name):
-                raise Exception("Invalid state name on line: " + `line_number`)
+                raise Exception("Invalid state name near line: " + `line_number`)
             main_parse(in_contents, line_number + 1, out_file, starting_state_name)
             return
 
@@ -190,7 +190,7 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
             words = line.split()
             state_name = words[2] # Known to exist because of trailing space above.
             if not is_valid_identifier(state_name):
-                raise Exception("Invalid state definition (bad name) on line: " + `line_number`)
+                raise Exception("Invalid state definition (bad name) near line: " + `line_number`)
             # TODO: Allow for previously seen state names to compose states. (Low priority)
             
             # Basic State Definition parsing
@@ -199,7 +199,7 @@ def main_parse(in_contents, start_line_number, out_file, starting_state_name):
                 for i in range(3, len(words)):
                     if not is_valid_identifier(words[i]):
                         raise Exception("Invalid state definition (bad arg '" +
-                                        words[i] + "') on line: " + `line_number`)
+                                        words[i] + "') near line: " + `line_number`)
                     args.append(words[i])
             for arg in args:
                 if arg in META_DICT:
@@ -361,7 +361,7 @@ def parse_matching(in_contents, start_line_number, current_clause, def_args):
     '''Parses a matching section of a Clause which must include one or more
     matching functions.'''
     if start_line_number is len(in_contents):
-        raise Exception('matching used not followed by any matching functions on line: ' +
+        raise Exception('matching used not followed by any matching functions near line: ' +
                         `start_line_number - 1`)
     lines_processed = 0
     first_match = True
@@ -382,7 +382,7 @@ def parse_matching(in_contents, start_line_number, current_clause, def_args):
             lines_processed += 1
         elif line.startswith("or match_"):
             if first_match:
-                raise Exception("'or' used without previous matching function on line: " +
+                raise Exception("'or' used without previous matching function near line: " +
                                 `line_number`)
             conjunction = "or"
             current_clause.matching_functions.append(parse_matching_function(line,
@@ -392,7 +392,7 @@ def parse_matching(in_contents, start_line_number, current_clause, def_args):
             lines_processed += 1
         elif line == "compare" or line == "do" or line == "goto":
             if lines_processed == 0:
-                raise Exception('matching used not followed by any matching functions on line: ' +
+                raise Exception('matching used not followed by any matching functions near line: ' +
                                 `start_line_number - 1`)
             return lines_processed
         else:
@@ -401,7 +401,7 @@ def parse_matching(in_contents, start_line_number, current_clause, def_args):
 def parse_timeout(in_contents, start_line_number, timeout, def_args):
     '''High-level function to parse a Timeout object.'''
     if start_line_number is len(in_contents):
-        raise Exception('timeout used not followed by a duration on line: ' + `start_line_number - 1`)
+        raise Exception('timeout used not followed by a duration near line: ' + `start_line_number - 1`)
     lines_to_skip = 0
     lines_processed = 0
     for line_number in range(start_line_number, len(in_contents)):
@@ -415,7 +415,7 @@ def parse_timeout(in_contents, start_line_number, timeout, def_args):
         if not timeout.seconds:
             if not is_valid_number(line) or int(line, 10) <= 0:
                 raise Exception('timeout duration must be a positive integer (given: ' + `line` +
-                                ') on line ' + `line_number`)
+                                ') near line ' + `line_number`)
             timeout.seconds = int(line, 10)
             lines_processed += 1
         elif line == "goto":
@@ -433,7 +433,7 @@ def parse_comparisons(in_contents, start_line_number, clause, def_args):
     '''Parses a comparison section of a Clause, which must include one or
     more binary comparisons.'''
     if start_line_number is len(in_contents):
-        raise Exception('"compare" used not followed by any comparisons on line: ' + `start_line_number - 1`)
+        raise Exception('"compare" used not followed by any comparisons near line: ' + `start_line_number - 1`)
     lines_processed = 0
     first_comparison = True
     for line_number in range(start_line_number, len(in_contents)):
@@ -443,7 +443,7 @@ def parse_comparisons(in_contents, start_line_number, clause, def_args):
             continue
         if line == "do" or line == "goto":
             if lines_processed == 0:
-                raise Exception('"compare" used not followed by any comparisons on line ' +
+                raise Exception('"compare" used not followed by any comparisons near line ' +
                                 `start_line_number - 1`)
             return lines_processed
         parts = line.split()
@@ -451,14 +451,14 @@ def parse_comparisons(in_contents, start_line_number, clause, def_args):
         comparator = ""
         if first_comparison:
             if len(parts) != 3:
-                raise Exception("Invalid number of comparison operators on line " +
+                raise Exception("Invalid number of comparison operators near line " +
                                 `line_number`)
             parts[0] = apply_global_scope(parts[0], def_args, line_number)
             comparator = parts[1]
             parts[2] = apply_global_scope(parts[2], def_args, line_number)
         else:
             if len(parts) < 3 or len(parts) > 4:
-                raise Exception("Invalid number of comparison operators on line " +
+                raise Exception("Invalid number of comparison operators near line " +
                                 `line_number`)
             if len(parts) == 3:
                 parts[0] = apply_global_scope(parts[0], def_args, line_number)
@@ -471,9 +471,9 @@ def parse_comparisons(in_contents, start_line_number, clause, def_args):
                 parts[3] = apply_global_scope(parts[3], def_args, line_number)
                 
         if not (comparator in ["<", "<=", "==", ">=", ">"]):
-            raise Exception("Invalid comparator on line " + `line_number`)
+            raise Exception("Invalid comparator near line " + `line_number`)
         if conjunction and not (conjunction in ["and", "or"]):
-            raise Exception("Invalid conjunction on line " + `line_number`)
+            raise Exception("Invalid conjunction near line " + `line_number`)
         if not conjunction and not first_comparison:
             # Implicit 'and' needed.
             clause.comparisons.append("and " + line)
@@ -487,7 +487,7 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
     '''Parses side-effect functions found in a 'do' section of a Clause.
     In general, the arguments are not validated.'''
     if start_line_number is len(in_contents):
-        raise Exception('"do" used not followed by any side-effects on line: ' + `start_line_number - 1`)
+        raise Exception('"do" used not followed by any side-effects near line: ' + `start_line_number - 1`)
     side_effect_functions = ["print", "print_packet", "print_stacktrace", "print_of_rules",
                              "print_time", "log", "log_packet", "log_stacktrace", "log_of_rules",
                              "log_time", "set_to_field_value", "set_to_regex_match", "set", "inc",
@@ -500,13 +500,13 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
             continue
         if line == "goto":
             if lines_processed == 0:
-                raise Exception('"do" used not followed by any side-effects on line: ' +
+                raise Exception('"do" used not followed by any side-effects near line: ' +
                                 `start_line_number - 1`)
             return lines_processed
         fname_and_args = line.split("(")
         fname = fname_and_args[0].strip()
         if not (fname in side_effect_functions):
-            raise Exception("Unknown side effect function (" + `fname` + ") on line: " +
+            raise Exception("Unknown side effect function (" + `fname` + ") near line: " +
                             `line_number`)
         args = []
         if len(fname_and_args) > 1:
@@ -548,7 +548,7 @@ def parse_goto(in_contents, start_line_number, goto_container, def_args):
     '''Parses the goto section of a Clause which must be followed by a
     single state and optionally one or more arguments to that state.'''
     if start_line_number is len(in_contents):
-        raise Exception('"goto" used not followed by a destination on line: ' + `start_line_number - 1`)
+        raise Exception('"goto" used not followed by a destination near line: ' + `start_line_number - 1`)
     goto = None
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number]
@@ -557,7 +557,7 @@ def parse_goto(in_contents, start_line_number, goto_container, def_args):
             continue
         goto = re.findall(r'(?:[^\s"]|"(?:\\.|[^"])*")+', line)
         if not is_valid_identifier(goto[0]):
-            raise Exception("Invalid goto identifier on line: " + `line_number`)
+            raise Exception("Invalid goto identifier near line: " + `line_number`)
         if line == "exit":
             goto = ["exit00"]
         args = []
@@ -567,10 +567,10 @@ def parse_goto(in_contents, start_line_number, goto_container, def_args):
             # This could definitely be more readable... clean up (low priority TODO)
             goto[i + 1] = apply_global_scope(args[i], def_args, line_number)
             if not is_valid_identifier(args[i]) and not is_valid_value(args[i]):
-                raise Exception("Invalid goto argument '" + args[i] + "' on line: " +
+                raise Exception("Invalid goto argument '" + args[i] + "' near line: " +
                                 `line_number`)
         if not goto:
-            raise Exception("goto used not followed by a destination on line: " +
+            raise Exception("goto used not followed by a destination near line: " +
                             `start_line_number - 1`)
         goto_container.goto = goto
         break
@@ -580,7 +580,7 @@ def parse_clauses(in_contents, start_line_number, out_file, def_args):
     '''High-level function to parse one or more Clauses within a
     StateDefinition.'''
     if start_line_number is len(in_contents):
-        raise Exception('state definition used not followed by any clauses on line: ' + `start_line_number - 1`)
+        raise Exception('state definition used not followed by any clauses near line: ' + `start_line_number - 1`)
     lines_processed = 0
     lines_to_skip = 0
     clauses = []
@@ -626,7 +626,7 @@ def parse_clauses(in_contents, start_line_number, out_file, def_args):
 def parse_of_filters(in_contents, start_line_number, out_file):
     '''Parses the initial open_flow filters for this DSM.'''
     if start_line_number is len(in_contents):
-        raise Exception('"start filters" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
+        raise Exception('"start filters" used not followed by variable definition(s) near line: ' + `start_line_number - 1`)
     lines_processed = 0
     initial_rules = []
     for line_number in range(start_line_number, len(in_contents)):
@@ -651,14 +651,14 @@ def parse_of_filters(in_contents, start_line_number, out_file):
             raise Exception("Invalid syntax near line: " + `line_number`)
     
     if lines_processed is 0:
-        raise Exception('"start filters" used not followed by filters on line: ' + `start_line_number - 1`)    
+        raise Exception('"start filters" used not followed by filters near line: ' + `start_line_number - 1`)    
     out_file.write("\ninitial_rules00 = " + `initial_rules` + "\n")
     return lines_processed    
     
 def parse_globals(in_contents, start_line_number, out_file):
     '''Parses the global variables found at the start of this DSML script.'''
     if start_line_number is len(in_contents):
-        raise Exception('"start variables" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)
+        raise Exception('"start variables" used not followed by variable definition(s) near line: ' + `start_line_number - 1`)
     lines_processed = 0
     for line_number in range(start_line_number, len(in_contents)):
         line = in_contents[line_number].strip()
@@ -683,23 +683,23 @@ def parse_globals(in_contents, start_line_number, out_file):
         if len(words) is 3 and words[1] == "=":
             words = [words[0], words[2]]
         if len(words) != 2:
-            raise Exception("Invalid variable definition on line: " + `line_number`)
+            raise Exception("Invalid variable definition near line: " + `line_number`)
         
         variable_name = words[0]
         if not is_valid_identifier(variable_name):
-            raise Exception("Invalid variable definition (bad name) on line: " + `line_number`)
+            raise Exception("Invalid variable definition (bad name) near line: " + `line_number`)
         out_file.write("\n" + GLOBAL_DICT + "['" + variable_name + "'] = ")
         value = words[1]
         if not is_valid_value(value):
-            raise Exception("Invalid variable definition (bad value) on line: " + `line_number`)
+            raise Exception("Invalid variable definition (bad value) near line: " + `line_number`)
         out_file.write(value)
         if variable_name in META_DICT:
-            raise Exception("Illegal variable re-definition on line: " + `line_number`)
+            raise Exception("Illegal variable re-definition near line: " + `line_number`)
         META_DICT[variable_name] = value
         lines_processed += 1
         
     if lines_processed is 0:
-        raise Exception('"start variables" used not followed by variable definition(s) on line: ' + `start_line_number - 1`)    
+        raise Exception('"start variables" used not followed by variable definition(s) near line: ' + `start_line_number - 1`)    
     return lines_processed        
 
 if __name__ == "__main__":
