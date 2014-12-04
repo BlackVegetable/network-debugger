@@ -79,10 +79,13 @@ def print_time00():
     print datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def print_stacktrace00(stack_object):
-    '''Print the network 'stacktrace' to the console.'''
+    '''Print the network 'stacktrace' to the console.
+    
+    Future Work: Display packet content that was matched that
+    triggered the transition.'''
     stacktrace = stack_object.stacktrace
     for i in range(len(stacktrace)):
-        print "frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]`
+        print "state " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]`
 
 def print_of_rules00(rule_object):
     '''Prints the Open Flow filters currently applied to the controller/switch.'''
@@ -105,11 +108,14 @@ def log_time00(filename):
         logfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + "\n")
 
 def log_stacktrace00(stack_object, filename):
-    '''Log a network 'stacktrace' to a given file.'''
+    '''Log a network 'stacktrace' to a given file.
+
+    Future Work: Display packet content that was matched that
+    triggered the transition.'''
     stacktrace = stack_object.stacktrace
     with open(filename, "a") as logfile:
         for i in range(len(stacktrace)):
-            logfile.write("frame " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]` + "\n")
+            logfile.write("state " + str(i) + " " + stacktrace[i][0] + ": " + `stacktrace[i][1]` + "\n")
 
 def log_of_rules00(rule_object, filename):
     '''Logs the Open Flow filters currently applied to the controller/switch to a given file.'''
