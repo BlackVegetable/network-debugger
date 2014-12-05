@@ -56,6 +56,18 @@ class dsml_controller (object):
         raw_bytes = pox_packet.raw
         return Ether(raw_bytes)
 
+    def _handle_PacketIn(self, event):
+        pox_packet = event.parsed
+        scapy_packet = self.convert_to_scapy_packet(pox_packet)
+        return_list = self.engine.handle_packet(scapy_packet)
+        if return_list[0] == True:
+            if len(return_list) > 1:
+                self.write_entry(return_list[1:])
+        elif return_list[0] == "Exit":
+            # TODO: Reset to default L2 learning switch rules.
+            # Otherwise the switch will require a manual reload.
+            sys.exit(0)
+
     # TODO: Replace this Pseudo-code
     # --- Function to receive packets ---
     # scapy_packet = self.convert_to_scapy_packet(pox_packet)
