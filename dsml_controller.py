@@ -62,7 +62,7 @@ class dsml_controller (object):
         
         self.start_sniffer ("127.0.0.1", "1337", "tcp")
 
-        self.waiter_thread = threading.Thread(target=self.timeout_waiter, args=[self], name="Waiter")
+        self.waiter_thread = threading.Thread(target=self.timeout_waiter, name="Waiter")
         self.waiter_thread.daemon = True
         self.waiter_thread.start()
 
