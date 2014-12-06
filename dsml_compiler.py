@@ -298,7 +298,8 @@ def parse_matching_function(s, line_number, conjunction, def_args):
     elif s.startswith("or"):
         s = s[2:]
 
-    fname_and_args = s.split("(")
+    first_paren = s.index("(")
+    fname_and_args = [s[0:first_paren], s[first_paren + 1:]]
 
     fname = fname_and_args[0].strip()
     args = fname_and_args[1].strip() # Get rid of trailing whitespace.
@@ -503,7 +504,10 @@ def parse_side_effects(in_contents, start_line_number, side_effect_container, de
                 raise Exception('"do" used not followed by any side-effects near line: ' +
                                 `start_line_number - 1`)
             return lines_processed
-        fname_and_args = line.split("(")
+
+        first_paren = line.index("(")
+        fname_and_args = [line[0:first_paren], line[first_paren + 1:]]
+
         fname = fname_and_args[0].strip()
         if not (fname in side_effect_functions):
             raise Exception("Unknown side effect function (" + `fname` + ") near line: " +
