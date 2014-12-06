@@ -9,13 +9,26 @@ from pox.entry_operation import *
 from scapy.all import *
 import sys
 import test_dsm as dsm
+import threading
 import time
 
 class dsml_controller (object):
 
     def __init__ (self, connection):
+        self.current_timeout_duration = 0
+        self.current_timeout_time = time.time()
+        self.timeout_lock = threading.Lock()
+        self.TIME_GRANULARITY = 5 # Seconds
+
+        self.DEBUG_TIME = True # ENABLE THIS FOR DEBUG TIMING INFO
+        self.packet_average = 0
+        self.packets_processed = 0
+        self.timeout_average = 0
+        self.timeouts_processed = 0
+
         self.connection = connection
         self.connection.addListeners(self)
+        
         #clear all previous rules
         core.openflow.clear_flows_of_connect = 1
         
@@ -44,41 +57,83 @@ class dsml_controller (object):
         #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
         #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
         
-        """This is the test part rules:"""
         #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=1)
         #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=6)
         
         self.start_sniffer ("127.0.0.1", "1337", "tcp")
-        
+
+        self.waiter_thread = threading.Thread(target=self.timeout_waiter, args=[self], name="Waiter")
+        self.waiter_thread.daemon = True
+        self.waiter_thread.start()
+
     def convert_to_scapy_packet(self, pox_packet):
         '''Convert a POX-style packet to a Scapy-style
         packet for use in the DSM.'''
         raw_bytes = pox_packet.raw
         return Ether(raw_bytes)
 
+    def debug_wrapper_handle_packet(self, pkt, timeout=0):
+        time_start = None
+        return_list = None
+        if self.DEBUG_TIME:
+            time_start = time.time()
+            return_list = self.engine.handle_packet(pkt, timeout)
+            time_stop = time.time()
+            
+            diff_time = time_stop - time_start
+            if pkt and self.packets_processed < 5000:
+                self.packets_processed += 1
+                self.packet_average = self.packet_average * (float(self.packets_processed - 1) /
+                                                             float(self.packets_processed)) + \
+                                      diff_time * (1.0 / float(self.packets_processed))
+            elif timeout > 0 and self.timeouts_processed < 5000:
+                self.timeouts_processed += 1
+                self.timeout_average = self.timeout_average * (float(self.timeouts_processed - 1) /
+                                                               float(self.timeouts_processed)) + \
+                                       diff_time * (1.0 / float(self.timeouts_processed))
+        else:
+            return_list = self.engine.handle_packet(pkt, timeout)
+        return return_list
+
+    def timeout_waiter(self):
+        '''Calls handle_packet periodically.'''
+        while True:
+            if self.current_timeout_time <= time.time() - self.TIME_GRANULARITY:
+                self.current_timeout_time = time.time()
+                with self.timeout_lock:
+                    self.current_timeout_duration += self.TIME_GRANULARITY
+                return_list = self.debug_wrapper_handle_packet(None, self.current_timeout_duration)
+                if return_list[0] == True:
+                    with self.timeout_lock:
+                        self.current_timeout_duration = 0
+                    if len(return_list) > 1:
+                        self.write_entry(return_list[1:])
+                elif return_list[0] == "Exit":
+                    self.cleanup()
+
     def _handle_PacketIn(self, event):
         pox_packet = event.parsed
         scapy_packet = self.convert_to_scapy_packet(pox_packet)
-        return_list = self.engine.handle_packet(scapy_packet)
+        return_list = self.debug_wrapper_handle_packet(scapy_packet)
         if return_list[0] == True:
+            with self.timeout_lock:
+                self.current_timeout_duration = 0
             if len(return_list) > 1:
                 self.write_entry(return_list[1:])
         elif return_list[0] == "Exit":
-            # TODO: Reset to default L2 learning switch rules.
-            # Otherwise the switch will require a manual reload.
-            sys.exit(0)
+            self.cleanup()
 
-    # TODO: Replace this Pseudo-code
-    # --- Function to receive packets ---
-    # scapy_packet = self.convert_to_scapy_packet(pox_packet)
-    # return_list = self.engine.handle_packet(scapy_packet)
-    # if return_list[0] == True:
-    #     if len(return_list) > 1:
-    #         self.write_entry(return_list[1:])
-    #     pass # Later, we will reset the timer.
-    # elif return_list[0] == "Exit":
-    #     Cleanup resources gracefully.
-    #     Will probably finish by calling sys.exit(0) 
+    def cleanup(self):
+        # TODO: Reset to default L2 learning switch rules.
+        # Otherwise the switch will require a manual reload.
+        if self.DEBUG_TIME:
+            with open("controller_log.txt", "a") as f:
+                f.write("DEBUG information @ " + `time.time()` + "\n")
+                f.write("Packets Processed (max 5000): " + `self.packets_processed` + "\n")
+                f.write("Average Packet Time: " + `self.packet_average` + "\n")
+                f.write("Timeouts Processed (max 5000): " + `self.timeouts_processed` + "\n")
+                f.write("Average Timeout Time: " + `self.timeout_average` + "\n\n")
+        sys.exit(0)
     
     def write_entry(self, rules):
         for item in rules:
