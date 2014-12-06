@@ -1,0 +1,56 @@
+
+# This is a DSML file for our tiny evaluation.
+# Its goal is to find a web request that corresponds to an HTTP 404 Error.
+
+start variables
+  request_page_name = "None"
+  requests_tracked = 0
+  my_log_file = "four_oh_four.txt"
+
+start filters
+  of_filter("10.1.1.2", "10.1.1.5", None, None)
+  of_filter("10.1.1.5", "10.1.1.2", None, None)
+
+start state waitingForRequest
+
+define state waitingForRequest
+  matching
+    match_regex("TCP", "payload", "^GET")
+  do
+    set_to_regex_match(request_page_name, "TCP", "payload", "^GET (.*?) HTTP", 1)
+    print("Request found: ")
+    print(request_page_name)
+    inc(requests_tracked)
+  goto
+    waitingForResponse request_page_name
+
+define state waitingForResponse page_name
+  matching
+    match_regex("TCP", "payload", "^HTTP.1.(0|1) 200 OK")
+  do
+    print("Response was OK for page: ")
+    print(page_name)
+  goto
+    waitingForRequest
+  matching
+    match_regex("TCP", "payload", "^HTTP.1.(0|1) 404")
+  do
+    print("Repsonse was 404 for page: ")
+    print(page_name)
+    print("Total requests tracked: ")
+    print(requests_tracked)
+    print_stacktrace()
+    
+    log(my_log_file, "Response was 404 for page: ")
+    log(my_log_file, page_name)
+    log(my_log_file, "Total requests tracked: ")
+    log(my_log_file, requests_tracked)
+    log_stacktrace(my_log_file)
+  goto
+    exit
+  timeout
+    20
+  do
+    print("Response timed out!")
+  goto
+    waitingForRequest
