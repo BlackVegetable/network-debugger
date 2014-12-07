@@ -15,7 +15,7 @@ start state waitingForRequest
 
 define state waitingForRequest
   matching
-    match_regex("Raw", "load", "GET")
+    match_string("Raw", "load", "GET", False)
   do
     set_to_regex_match(request_page_name, "Raw", "load", "GET (.*?) HTTP", 1)
     print("Request found: ")
@@ -26,14 +26,14 @@ define state waitingForRequest
 
 define state waitingForResponse page_name
   matching
-    match_regex("Raw", "load", "HTTP.1.(0|1) 200 OK")
+    match_string("Raw", "load", "HTTP/1.1 200 OK", False)
   do
     print("Response was OK for page: ")
     print(page_name)
   goto
     waitingForRequest
   matching
-    match_regex("Raw", "load", "HTTP.1.(0|1) 404")
+    match_string("Raw", "load", "HTTP/1.1 404", False)
   do
     print("Repsonse was 404 for page: ")
     print(page_name)

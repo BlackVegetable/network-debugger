@@ -284,7 +284,7 @@ def apply_global_scope(maybe_variable, def_args, line_number, name_wanted=False)
                 return "'" + maybe_variable + "'"
             else:
                 return GLOBAL_DICT + "['" + maybe_variable + "']"
-        elif not (maybe_variable in def_args or maybe_variable == "None"):
+        elif not (maybe_variable in def_args or maybe_variable == "None" or is_valid_boolean(maybe_variable)):
             raise Exception("Unknown variable name '" + maybe_variable + "' near " +
                             "line " + `line_number`)
     return maybe_variable
