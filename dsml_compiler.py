@@ -109,7 +109,7 @@ class Timeout:
             raise Exception("Timeout cannot have non-positive duration.")
         if not self.goto:
             raise Exception("Timeout has no string representation with no goto.")
-        s = "    if time_elapsed00 >= " + `self.seconds` + ":"
+        s = "    if not packet and time_elapsed00 >= " + `self.seconds` + ":"
         for effect in self.side_effects:
             s += "\n        " + effect
         s += "\n        return (True, ["
