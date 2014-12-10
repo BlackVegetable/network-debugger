@@ -30,7 +30,7 @@ class dsml_controller (object):
         self.connection.addListeners(self)
         
         #clear all previous rules
-        core.openflow.clear_flows_of_connect = 1
+        #core.openflow.clear_flows_of_connect = 1
         
         self.engine = dsm.Engine()
         starting_of_rules = self.engine.get_initial_rules()
@@ -46,21 +46,6 @@ class dsml_controller (object):
                     tp_src = int(item.source_port)
                 else:
                     tp_src = None
-                add_sniff(self.connection, nw_dst=item.destination_ip, nw_src=item.source_ip, tp_dst=tp_dst, tp_src=tp_src)
-        #for i in xrange(len(starting_of_rules)):     
-        #    if starting_of_rules[i].command == "add":
-        #        #add_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
-        #        add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
-        #        add_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
-        #    else:
-        #        #delete_entry(connection, nw_dst, nw_src, dl_type = 0x800, nw_proto = 1)
-        #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=1)
-        #        delete_entry(self.connection, nw_dst=starting_of_rules[i+1].destination_ip, nw_src=starting_of_rules[i].source_ip, nw_proto=6)
-        
-        #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=1)
-        #add_entry(self.connection, nw_dst="10.1.1.2", nw_src="10.1.1.5", nw_proto=6)
-        
-        self.start_sniffer ("127.0.0.1", "1337", "tcp")
 
         self.waiter_thread = threading.Thread(target=self.timeout_waiter, name="Waiter")
         self.waiter_thread.daemon = True
@@ -98,20 +83,19 @@ class dsml_controller (object):
     def timeout_waiter(self):
         '''Calls handle_packet periodically.'''
         while True:
-            if self.current_timeout_time <= time.time() - self.TIME_GRANULARITY:
-                self.current_timeout_time = time.time()
+            time.sleep(self.TIME_GRANULARITY)
+            with self.timeout_lock:
+                self.current_timeout_duration += self.TIME_GRANULARITY
+            return_list = self.debug_wrapper_handle_packet(None, self.current_timeout_duration)
+            if return_list[0] == True:
                 with self.timeout_lock:
-                    self.current_timeout_duration += self.TIME_GRANULARITY
-                return_list = self.debug_wrapper_handle_packet(None, self.current_timeout_duration)
-                if return_list[0] == True:
-                    with self.timeout_lock:
-                        self.current_timeout_duration = 0
-                    if len(return_list) > 1:
-                        self.write_entry(return_list[1:])
-                elif return_list[0] == "Exit":
-                    self.cleanup()
+                    self.current_timeout_duration = 0
+                if len(return_list) > 1:
+                    self.write_entry(return_list[1:])
+            elif return_list[0] == "Exit":
+                self.cleanup()
 
-    def _handle_PacketIn(self, event):
+    def handle_PacketIn(self, event):
         pox_packet = event.parsed
         scapy_packet = self.convert_to_scapy_packet(pox_packet)
         return_list = self.debug_wrapper_handle_packet(scapy_packet)
